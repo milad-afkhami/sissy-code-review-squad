@@ -1,0 +1,14 @@
+{
+  "$schema": "./marketplace.schema.json",
+  "name": "sissy-code-review-squad",
+  "displayName": "Sissy Code Review Squad",
+  "description": "Multi-agent code review plugin for GitLab merge requests",
+  "plugins": [
+    {
+      "name": "review",
+      "displayName": "Sissy Code Review Squad",
+      "description": "10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
+      "path": "."
+    }
+  ]
+}
