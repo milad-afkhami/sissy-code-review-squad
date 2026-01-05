@@ -91,6 +91,8 @@ For best results, create these files in your project's `.claude/rules/` director
 
 These files help the Discovery agent provide project-specific context to reviewers.
 
+**Note:** Some agents (React, TypeScript, Code Quality, Styling) will check for these files and provide more targeted feedback when they exist. If files are missing, agents gracefully continue with generic best practices.
+
 ## How It Works
 
 ```

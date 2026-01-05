@@ -18,12 +18,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/sissy-code-review-squad"
+    "url": "https://github.com/milad-afkhami/sissy-code-review-squad"
   },
   "bugs": {
-    "url": "https://github.com/user/sissy-code-review-squad/issues"
+    "url": "https://github.com/milad-afkhami/sissy-code-review-squad/issues"
   },
-  "homepage": "https://github.com/user/sissy-code-review-squad#readme",
+  "homepage": "https://github.com/milad-afkhami/sissy-code-review-squad#readme",
   "engines": {
     "node": ">=18.0.0"
   },
