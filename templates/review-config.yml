@@ -1,0 +1,74 @@
+# Sissy Code Review Squad Configuration
+# Copy this file to your project's .claude/review-config.yml
+#
+# Enable or disable agents based on your project's needs.
+# All agents are enabled by default.
+
+agents:
+  # Colorblind Sissy - WCAG compliance, ARIA, semantic HTML
+  accessibility:
+    enabled: true
+
+  # SecuSissy - XSS, secrets, auth vulnerabilities
+  security:
+    enabled: true
+
+  # TurboSissy - Re-renders, bundle size, Core Web Vitals
+  performance:
+    enabled: true
+
+  # Canonical Sissy - Crawlability, meta tags, SSR
+  # Disable for non-web projects or internal tools
+  seo:
+    enabled: true
+
+  # ChicSissy - Tailwind, design system, responsive design
+  styling:
+    enabled: true
+
+  # KISS Sissy - Readability, DRY, naming conventions
+  code-quality:
+    enabled: true
+
+  # Hooked Sissy - React patterns, hooks, components
+  # Disable for non-React projects
+  react:
+    enabled: true
+
+  # Unknown Sissy - Type safety, TypeScript best practices
+  # Disable for JavaScript-only projects
+  typescript:
+    enabled: true
+
+  # Detached-HEAD Sissy - Commit messages, PR structure
+  git:
+    enabled: true
+
+  # BugSlayer Sissy - Requirements, bugs, test checklists
+  qa:
+    enabled: true
+
+# ============================================================
+# RECOMMENDED PROJECT FILES (Optional but highly recommended)
+# ============================================================
+#
+# For best results, create these files in your project's .claude/rules/:
+#
+# .claude/rules/tech-stack.md
+#   Document your project's technology stack (React version, Next.js,
+#   TypeScript, CSS framework, UI library, etc.)
+#
+# .claude/rules/component-boilerplate.md
+#   Document your component patterns and conventions
+#
+# .claude/rules/services-guideline.md
+#   Document your service layer patterns and data flow
+#
+# .claude/rules/data-flow.md
+#   Document your data architecture and state management
+#
+# .claude/rules/server-state-management.md
+#   Document your server state patterns (React Query, etc.)
+#
+# These files help the Discovery agent provide project-specific
+# context to review agents, resulting in more relevant feedback.

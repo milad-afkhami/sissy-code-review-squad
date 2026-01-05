@@ -1,0 +1,24 @@
+# Default configuration for Sissy Code Review Squad
+# All agents are enabled by default
+
+agents:
+  accessibility:
+    enabled: true
+  security:
+    enabled: true
+  performance:
+    enabled: true
+  seo:
+    enabled: true
+  styling:
+    enabled: true
+  code-quality:
+    enabled: true
+  react:
+    enabled: true
+  typescript:
+    enabled: true
+  git:
+    enabled: true
+  qa:
+    enabled: true

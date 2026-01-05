@@ -1,0 +1,41 @@
+# Original implementation (kept for reference, not part of plugin)
+.claude/
+PR_REVIEW_TOOLKIT_PLUGIN_PRD.md
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Package manager locks (keep package-lock.json if using npm)
+yarn.lock
+pnpm-lock.yaml
+
+# Temporary files
+*.tmp
+*.temp

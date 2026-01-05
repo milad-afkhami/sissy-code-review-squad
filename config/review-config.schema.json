@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sissy Code Review Squad Configuration",
+  "description": "Configuration schema for the Sissy Code Review Squad plugin",
+  "type": "object",
+  "properties": {
+    "agents": {
+      "type": "object",
+      "description": "Enable or disable individual review agents",
+      "properties": {
+        "accessibility": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Colorblind Sissy (Accessibility) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the SecuSissy (Security) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "performance": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the TurboSissy (Performance) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "seo": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Canonical Sissy (SEO) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "styling": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the ChicSissy (Styling) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "code-quality": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the KISS Sissy (Code Quality) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "react": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Hooked Sissy (React) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "typescript": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Unknown Sissy (TypeScript) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "git": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Detached-HEAD Sissy (Git) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "qa": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the BugSlayer Sissy (QA) agent",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

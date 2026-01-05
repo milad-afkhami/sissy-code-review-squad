@@ -1,0 +1,48 @@
+{
+  "name": "sissy-code-review-squad",
+  "version": "1.0.0",
+  "description": "Multi-agent code review plugin for GitLab merge requests. 10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "code-review",
+    "gitlab",
+    "merge-request",
+    "accessibility",
+    "security",
+    "performance",
+    "react",
+    "typescript"
+  ],
+  "author": "Milad Afkhami",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/sissy-code-review-squad"
+  },
+  "bugs": {
+    "url": "https://github.com/user/sissy-code-review-squad/issues"
+  },
+  "homepage": "https://github.com/user/sissy-code-review-squad#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "claudeCode": {
+    "plugin": true,
+    "commands": [
+      "sissy-squad"
+    ],
+    "commandAliases": {
+      "sissy-code-review-squad": "sissy-squad"
+    }
+  },
+  "files": [
+    "commands/",
+    "agents/",
+    "rules/",
+    "config/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ]
+}
