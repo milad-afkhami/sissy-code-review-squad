@@ -1,5 +1,6 @@
 ---
 model: opus
+description: Run comprehensive code review on a GitLab merge request using 10 specialized agents
 ---
 
 # Comprehensive Code Review
