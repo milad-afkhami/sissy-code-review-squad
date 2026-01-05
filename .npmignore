@@ -1,0 +1,33 @@
+# Development files
+.git/
+.gitignore
+.claude/
+.claude-plugin/
+
+# Documentation source (README included via package.json files)
+PR_REVIEW_TOOLKIT_PLUGIN_PRD.md
+
+# Test files
+tests/
+*.test.js
+*.spec.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# npm
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Build artifacts
+dist/
+build/
+*.tgz

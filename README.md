@@ -34,7 +34,7 @@ claude plugins install sissy-code-review-squad
 
 3. **Run a review** on any GitLab MR:
    ```
-   /sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123
+   /sissy-code-review-squad:sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123
    ```
 
 That's it! The squad will review your MR and post comments directly to GitLab.
@@ -148,13 +148,13 @@ Make sure you have the GitLab MCP server configured in your Claude Code settings
 
 ## Commands
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `/sissy-squad <MR_URL>` | `/sissy-code-review-squad` | Run full code review |
+| Command | Description |
+|---------|-------------|
+| `/sissy-code-review-squad:sissy-squad <MR_URL>` | Run full code review with all enabled agents |
 
 ## Example Output
 
-After running `/sissy-squad`, you'll see:
+After running the command, you'll see:
 
 1. **Individual comments** posted to specific lines in the MR
 2. **Agent summary notes** from each agent with their findings

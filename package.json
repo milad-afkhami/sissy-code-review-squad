@@ -42,7 +42,9 @@
     "rules/",
     "config/",
     "templates/",
+    "docs/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CONTRIBUTING.md"
   ]
 }
