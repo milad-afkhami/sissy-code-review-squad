@@ -1,14 +1,18 @@
 {
-  "$schema": "./marketplace.schema.json",
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sissy-code-review-squad",
-  "displayName": "Sissy Code Review Squad",
+  "version": "1.0.0",
   "description": "Multi-agent code review plugin for GitLab merge requests",
+  "owner": {
+    "name": "Milad Afkhami",
+    "email": "dev.miladafkhami@gmail.com"
+  },
   "plugins": [
     {
       "name": "review",
-      "displayName": "Sissy Code Review Squad",
       "description": "10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
-      "path": "."
+      "source": ".",
+      "category": "productivity"
     }
   ]
 }
