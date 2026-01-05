@@ -11,7 +11,7 @@
     {
       "name": "review",
       "description": "10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
-      "source": ".",
+      "source": "./",
       "category": "productivity"
     }
   ]
