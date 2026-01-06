@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "review",
+      "name": "sissy-code-review-squad",
       "description": "10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
       "source": "./",
       "category": "productivity"
