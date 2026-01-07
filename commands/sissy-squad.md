@@ -73,10 +73,6 @@ Launch only the **enabled agents** simultaneously using a single message with mu
 
 **Skip agents not in the `enabled_agents` list.** Log which agents are skipped for transparency.
 
-**Before building prompts**, read the code review standards file: `@rules/code-review-standards.md`
-
-Store its content as `{code_review_standards}` to include in each agent prompt.
-
 Each agent prompt should include:
 
 ````
@@ -95,9 +91,66 @@ Each agent prompt should include:
 
 ---
 
-## Code Review Standards
+## Code Review Standards (MUST FOLLOW)
 
-{code_review_standards}
+### Comment Format (Required for ALL comments)
+
+All comments MUST start with the SubAgent header and severity prefix with emojis:
+
+```
+> SubAgent: {emoji} {AgentName}
+> **{prefix}** Brief title
+
+Explanation with context.
+```
+
+**Required Prefixes:**
+- `❗ [blocking]` - Must fix before merge
+- `💡 [suggestion]` - Recommended improvement
+- `💅 [nit]` - Style preference, minor best practice
+- `❓ [question]` - Needs clarification
+
+### Summary Note Format (Required for summary)
+
+After completing your review, post a summary note using `mcp__gitlab-mcp__create_merge_request_note` with this EXACT format:
+
+```
+> SubAgent: {emoji} {AgentName}
+
+## {Domain} Review Summary
+
+| {AgentName} | Issues Found |
+| ----------- | ------------ |
+| ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X</strong> |
+
+### Key Findings
+
+[Brief summary of main issues and recommendations]
+
+### Verdict
+
+{✅ No blocking issues | ⚠️ Blocking issues found | 💬 Questions need answers}
+```
+
+### Agent Cover Images (Use YOUR agent's URL)
+
+| Agent | Emoji | Cover Image URL |
+|-------|-------|-----------------|
+| Colorblind Sissy (Accessibility) | 🦯 | `https://milad-afkhami.com/images/blog/sissy/colorblind-sissy.jpg` |
+| SecuSissy (Security) | 🔒 | `https://milad-afkhami.com/images/blog/sissy/secu-sissy.jpg` |
+| TurboSissy (Performance) | ⚡ | `https://milad-afkhami.com/images/blog/sissy/turbo-sissy.jpg` |
+| Canonical Sissy (SEO) | 🌐 | `https://milad-afkhami.com/images/blog/sissy/canonical-sissy.jpg` |
+| ChicSissy (Styling) | 🎨 | `https://milad-afkhami.com/images/blog/sissy/chic-sissy.jpg` |
+| KISS Sissy (Code Quality) | 🧹 | `https://milad-afkhami.com/images/blog/sissy/kiss-sissy.jpg` |
+| Hooked Sissy (React) | ⚛️ | `https://milad-afkhami.com/images/blog/sissy/hooked-sissy.jpg` |
+| Unknown Sissy (TypeScript) | 📝 | `https://milad-afkhami.com/images/blog/sissy/unknown-sissy.jpg` |
+| Detached-HEAD Sissy (Git) | 📚 | `https://milad-afkhami.com/images/blog/sissy/detached-head-sissy.jpg` |
+| BugSlayer Sissy (QA) | ✅ | `https://milad-afkhami.com/images/blog/sissy/bugslayer-sissy.jpg` |
+
+### GitLab MCP Tool Usage
+
+- Use `mcp__gitlab-mcp__create_merge_request_thread` for code-specific issues (with `position` parameter when applicable)
+- Use `mcp__gitlab-mcp__create_merge_request_note` ONLY for the summary note (no position parameter)
 
 ---
 
@@ -233,7 +286,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
 │     ├── All receive: Diffs + Architecture Context +         │
-│     │   Code Review Standards (for formatting/images)       │
+│     │   Embedded Code Review Standards (inline in prompt)   │
 │     ├── Each posts comments directly to GitLab              │
 │     └── Each returns: Issue counts + findings               │
 │                                                             │
@@ -250,11 +303,10 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 2. **Configuration**: Read `.claude/review-config.yml` from user's project to determine enabled agents
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
 4. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
-5. **Context Sharing**: All review agents receive the same Architecture Context AND Code Review Standards
-6. **Code Review Standards**: MUST be included in each agent prompt so they have access to comment formats, summary templates, and cover image URLs
+5. **Context Sharing**: All review agents receive the same Architecture Context
+6. **Embedded Standards**: Code review standards (comment format, summary format, cover images) are embedded directly in the prompt template above - DO NOT skip or abbreviate them
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab
 8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
-9. **Standards**: All agents follow the code review standards from the plugin's rules
 
 ## User Project Setup
 
