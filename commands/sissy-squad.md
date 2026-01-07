@@ -73,6 +73,10 @@ Launch only the **enabled agents** simultaneously using a single message with mu
 
 **Skip agents not in the `enabled_agents` list.** Log which agents are skipped for transparency.
 
+**Before building prompts**, read the code review standards file: `@rules/code-review-standards.md`
+
+Store its content as `{code_review_standards}` to include in each agent prompt.
+
 Each agent prompt should include:
 
 ````
@@ -88,6 +92,12 @@ Each agent prompt should include:
 - base_sha: {diff_refs.base_sha}
 - head_sha: {diff_refs.head_sha}
 - start_sha: {diff_refs.start_sha}
+
+---
+
+## Code Review Standards
+
+{code_review_standards}
 
 ---
 
@@ -222,7 +232,8 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 │                                                             │
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
-│     ├── All receive: Diffs + Architecture Context           │
+│     ├── All receive: Diffs + Architecture Context +         │
+│     │   Code Review Standards (for formatting/images)       │
 │     ├── Each posts comments directly to GitLab              │
 │     └── Each returns: Issue counts + findings               │
 │                                                             │
@@ -239,10 +250,11 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 2. **Configuration**: Read `.claude/review-config.yml` from user's project to determine enabled agents
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
 4. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
-5. **Context Sharing**: All review agents receive the same Architecture Context
-6. **Direct Comments**: Each agent posts its own comments directly to GitLab
-7. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
-8. **Standards**: All agents follow the code review standards from the plugin's rules
+5. **Context Sharing**: All review agents receive the same Architecture Context AND Code Review Standards
+6. **Code Review Standards**: MUST be included in each agent prompt so they have access to comment formats, summary templates, and cover image URLs
+7. **Direct Comments**: Each agent posts its own comments directly to GitLab
+8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
+9. **Standards**: All agents follow the code review standards from the plugin's rules
 
 ## User Project Setup
 
