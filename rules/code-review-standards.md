@@ -157,17 +157,11 @@ After completing a review, each agent MUST post a summary note to the MR with th
 ```markdown
 > SubAgent: {emoji} {AgentName}
 
-![{AgentName}]({COVER_IMAGE_URL}){width=300 height=300}
-
 ## {Domain} Review Summary
 
-### Issues Found
-
-| Severity       | Count |
-| -------------- | ----- |
-| ❗ Blocking    | X     |
-| 💡 Suggestions | X     |
-| 💅 Nits        | X     |
+| {AgentName} | Issues Found |
+| ----------- | ------------ |
+| ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X</strong> |
 
 ### Key Findings
 
