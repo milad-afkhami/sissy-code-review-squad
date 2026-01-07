@@ -93,64 +93,7 @@ Each agent prompt should include:
 
 ## Code Review Standards (MUST FOLLOW)
 
-### Comment Format (Required for ALL comments)
-
-All comments MUST start with the SubAgent header and severity prefix with emojis:
-
-```
-> SubAgent: {emoji} {AgentName}
-> **{prefix}** Brief title
-
-Explanation with context.
-```
-
-**Required Prefixes:**
-- `❗ [blocking]` - Must fix before merge
-- `💡 [suggestion]` - Recommended improvement
-- `💅 [nit]` - Style preference, minor best practice
-- `❓ [question]` - Needs clarification
-
-### Summary Note Format (Required for summary)
-
-After completing your review, post a summary note using `mcp__gitlab-mcp__create_merge_request_note` with this EXACT format:
-
-```
-> SubAgent: {emoji} {AgentName}
-
-## {Domain} Review Summary
-
-| {AgentName} | Issues Found |
-| ----------- | ------------ |
-| ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X</strong> |
-
-### Key Findings
-
-[Brief summary of main issues and recommendations]
-
-### Verdict
-
-{✅ No blocking issues | ⚠️ Blocking issues found | 💬 Questions need answers}
-```
-
-### Agent Cover Images (Use YOUR agent's URL)
-
-| Agent | Emoji | Cover Image URL |
-|-------|-------|-----------------|
-| Colorblind Sissy (Accessibility) | 🦯 | `https://milad-afkhami.com/images/blog/sissy/colorblind-sissy.jpg` |
-| SecuSissy (Security) | 🔒 | `https://milad-afkhami.com/images/blog/sissy/secu-sissy.jpg` |
-| TurboSissy (Performance) | ⚡ | `https://milad-afkhami.com/images/blog/sissy/turbo-sissy.jpg` |
-| Canonical Sissy (SEO) | 🌐 | `https://milad-afkhami.com/images/blog/sissy/canonical-sissy.jpg` |
-| ChicSissy (Styling) | 🎨 | `https://milad-afkhami.com/images/blog/sissy/chic-sissy.jpg` |
-| KISS Sissy (Code Quality) | 🧹 | `https://milad-afkhami.com/images/blog/sissy/kiss-sissy.jpg` |
-| Hooked Sissy (React) | ⚛️ | `https://milad-afkhami.com/images/blog/sissy/hooked-sissy.jpg` |
-| Unknown Sissy (TypeScript) | 📝 | `https://milad-afkhami.com/images/blog/sissy/unknown-sissy.jpg` |
-| Detached-HEAD Sissy (Git) | 📚 | `https://milad-afkhami.com/images/blog/sissy/detached-head-sissy.jpg` |
-| BugSlayer Sissy (QA) | ✅ | `https://milad-afkhami.com/images/blog/sissy/bugslayer-sissy.jpg` |
-
-### GitLab MCP Tool Usage
-
-- Use `mcp__gitlab-mcp__create_merge_request_thread` for code-specific issues (with `position` parameter when applicable)
-- Use `mcp__gitlab-mcp__create_merge_request_note` ONLY for the summary note (no position parameter)
+@rules/code-review-standards.md
 
 ---
 
@@ -286,7 +229,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
 │     ├── All receive: Diffs + Architecture Context +         │
-│     │   Embedded Code Review Standards (inline in prompt)   │
+│     │   Code Review Standards (@rules/ reference resolved)  │
 │     ├── Each posts comments directly to GitLab              │
 │     └── Each returns: Issue counts + findings               │
 │                                                             │
@@ -304,7 +247,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
 4. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
 5. **Context Sharing**: All review agents receive the same Architecture Context
-6. **Embedded Standards**: Code review standards (comment format, summary format, cover images) are embedded directly in the prompt template above - DO NOT skip or abbreviate them
+6. **Code Review Standards**: The `@rules/code-review-standards.md` reference in the prompt template will be resolved to include the full standards (comment format, summary format, cover images)
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab
 8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
 
