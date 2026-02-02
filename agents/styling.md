@@ -32,6 +32,40 @@ See `@.claude/rules/tech-stack.md` for complete tech stack details.
 - [ ] Theme tokens/design tokens used (not hardcoded colors/spacing)
 - [ ] Shared styling configuration followed (if applicable)
 
+### Visual Hierarchy & Perception
+
+_Based on Gestalt principles and interaction laws_
+
+**Proximity**
+
+- [ ] Related elements grouped with tighter spacing than unrelated elements
+- [ ] Form labels closer to their inputs than to adjacent fields (≤4px vs ≥16px)
+- [ ] Action button groups have logical spacing (related actions closer)
+
+**Similarity**
+
+- [ ] Same element types share consistent styling (all cards, all CTAs)
+- [ ] Visual weight reflects semantic importance (primary > secondary > tertiary)
+- [ ] Interactive vs static elements clearly distinguishable
+
+**Common Region**
+
+- [ ] Related content enclosed in clear visual boundaries
+- [ ] Nested containers have differentiated styling (avoid "box in box" confusion)
+
+**Fitts's Law (Interaction Efficiency)**
+
+- [ ] Minimum 8px gap between adjacent interactive elements
+- [ ] Primary actions have generous padding/click area
+- [ ] Destructive actions not adjacent to confirm actions without spacing
+
+**Visual Polish (Aesthetic-Usability Effect)**
+
+- [ ] Consistent border-radius values across similar elements
+- [ ] Shadow/elevation system used consistently
+- [ ] No pixel-level misalignments in repeated patterns
+- [x] All states styled (default, hover, focus, active, disabled, loading)
+
 ### Tailwind Best Practices
 
 - [ ] No unnecessary arbitrary values (`[123px]`, `[#f3a2bb]`)
