@@ -109,7 +109,7 @@ Use `mcp__gitlab-mcp__create_merge_request_thread`. When the issue relates to a 
 mcp__gitlab-mcp__create_merge_request_thread({
   project_id: project_id,
   merge_request_iid: mr_iid,
-  body: "> SubAgent: 🦯 Colorblind Sissy (Accessibility)\n> **❗ [blocking]** Issue title\n\nDetailed explanation...",
+  body: "> SubAgent: 🦯 Colorblind Sissy (Accessibility)\n\n> **❗ [blocking]** Issue title\n\nDetailed explanation...",
   position: {
     base_sha: diff_refs.base_sha,
     head_sha: diff_refs.head_sha,
@@ -128,7 +128,7 @@ For MR-level issues with no specific file (e.g., branch naming, commit messages,
 mcp__gitlab-mcp__create_merge_request_thread({
   project_id: project_id,
   merge_request_iid: mr_iid,
-  body: "> SubAgent: 📚 Detached-HEAD Sissy (Git)\n> **❗ [blocking]** Branch naming mismatch\n\nThe branch uses `fix/` prefix but commits use `feat` type...",
+  body: "> SubAgent: 📚 Detached-HEAD Sissy (Git)\n\n> **❗ [blocking]** Branch naming mismatch\n\nThe branch uses `fix/` prefix but commits use `feat` type...",
 });
 ```
 
@@ -159,8 +159,8 @@ After completing a review, each agent MUST post a summary note to the MR with th
 
 ## {Domain} Review Summary
 
-| {AgentName} | Issues Found |
-| ----------- | ------------ |
+| {AgentName}                                             | Issues Found                                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------------------ |
 | ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X</strong> |
 
 ### Key Findings

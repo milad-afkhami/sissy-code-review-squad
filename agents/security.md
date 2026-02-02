@@ -6,7 +6,7 @@ model: opus
 
 Review the merge request for security vulnerabilities and risks.
 
-**IMPORTANT: Follow `@rules/code-review-standards.md` for all commenting formats, prefixes, and severity guidelines.**
+**IMPORTANT: Before posting any comments, READ the file `rules/code-review-standards.md` and follow it EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
 
 ## Context
 
@@ -78,7 +78,7 @@ $ARGUMENTS
 
 ## Output
 
-1. Post issues as **threads** (not inline comments) to GitLab on specific lines following `@rules/code-review-standards.md` (Comment Format section).
-2. Post a summary note following the format in `@rules/code-review-standards.md` (Summary Note Format section).
+1. Post issues as **threads** (not inline comments) to GitLab on specific lines using the **Comment Format** section from `rules/code-review-standards.md`.
+2. Post a summary note using the **EXACT Summary Note Format** from `rules/code-review-standards.md`.
 
 Then return vulnerability counts by severity.

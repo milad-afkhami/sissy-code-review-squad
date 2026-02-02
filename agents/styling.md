@@ -6,7 +6,7 @@ model: opus
 
 Review the merge request for styling issues and design system compliance.
 
-**IMPORTANT: Follow `@rules/code-review-standards.md` for all commenting formats, prefixes, and severity guidelines.**
+**IMPORTANT: Before posting any comments, READ the file `rules/code-review-standards.md` and follow it EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
 
 ## Context
 
@@ -27,14 +27,14 @@ See `@.claude/rules/tech-stack.md` for complete tech stack details.
 ### Design System Compliance
 
 - [ ] Using the project's component library as intended (no unnecessary overrides)
-- [ ] Components used from the established UI kit where available (e.g. no custom button when there is a button UI kit)
+- [ ] Components used from the established UI kit (button, badge, modal, table, divider, alert, ) where available (e.g. no custom button when there is a button UI kit)
 - [ ] Consistent with existing design patterns across the codebase
 - [ ] Theme tokens/design tokens used (not hardcoded colors/spacing)
 - [ ] Shared styling configuration followed (if applicable)
 
 ### Tailwind Best Practices
 
-- [ ] No unnecessary arbitrary values `[123px]`
+- [ ] No unnecessary arbitrary values (`[123px]`, `[#f3a2bb]`)
 - [ ] Using theme spacing scale (p-4, m-2, etc.)
 - [ ] Using theme colors (bg-primary, text-base-content)
 - [ ] Logical grouping of utilities
@@ -98,7 +98,7 @@ _Check if project requires RTL or internationalization_
 
 ## Output
 
-1. Post issues as **threads** (not inline comments) to GitLab on specific lines following `@rules/code-review-standards.md` (Comment Format section).
-2. Post a summary note following the format in `@rules/code-review-standards.md` (Summary Note Format section).
+1. Post issues as **threads** (not inline comments) to GitLab on specific lines using the **Comment Format** section from `rules/code-review-standards.md`.
+2. Post a summary note using the **EXACT Summary Note Format** from `rules/code-review-standards.md`.
 
 Then return issue counts and design system adherence assessment.

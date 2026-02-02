@@ -91,12 +91,6 @@ Each agent prompt should include:
 
 ---
 
-## Code Review Standards (MUST FOLLOW)
-
-@rules/code-review-standards.md
-
----
-
 ## Architecture Context
 
 {architecture_context}
@@ -228,8 +222,8 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 │                                                             │
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
-│     ├── All receive: Diffs + Architecture Context +         │
-│     │   Code Review Standards (@rules/ reference resolved)  │
+│     ├── All receive: Diffs + Architecture Context           │
+│     ├── Each agent reads rules/code-review-standards.md     │
 │     ├── Each posts comments directly to GitLab              │
 │     └── Each returns: Issue counts + findings               │
 │                                                             │
@@ -247,7 +241,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
 4. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
 5. **Context Sharing**: All review agents receive the same Architecture Context
-6. **Code Review Standards**: The `@rules/code-review-standards.md` reference in the prompt template will be resolved to include the full standards (comment format, summary format, cover images)
+6. **Code Review Standards**: Each agent must READ `rules/code-review-standards.md` before posting comments
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab
 8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
 
