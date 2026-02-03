@@ -6,7 +6,7 @@ model: opus
 
 Review the merge request for TypeScript type safety and best practices.
 
-**IMPORTANT: Before posting any comments, READ the file `rules/code-review-standards.md` and follow it EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
+**IMPORTANT: Follow the Code Review Standards section in your prompt EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
 
 ## Context
 
@@ -101,7 +101,7 @@ $ARGUMENTS
 
 ## Output
 
-1. Post issues as **threads** (not inline comments) to GitLab on specific lines using the **Comment Format** section from `rules/code-review-standards.md`.
-2. Post a summary note using the **EXACT Summary Note Format** from `rules/code-review-standards.md`.
+1. Post issues as **threads** to GitLab on specific lines using the **Comment Format** from the Code Review Standards above.
+2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards above.
 
 Then return issue counts and type coverage assessment.
