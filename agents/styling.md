@@ -6,9 +6,7 @@ model: opus
 
 Review the merge request for styling issues and design system compliance.
 
-## Code Review Standards
-
-@rules/code-review-standards.md
+**IMPORTANT: Follow the Code Review Standards section at the top of your prompt EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
 
 ## Context
 
