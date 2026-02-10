@@ -30,7 +30,8 @@
   "claudeCode": {
     "plugin": true,
     "commands": [
-      "sissy-squad"
+      "sissy-squad",
+      "clear-mr-comments"
     ],
     "commandAliases": {
       "sissy-code-review-squad": "sissy-squad"
