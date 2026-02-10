@@ -6,7 +6,9 @@ model: opus
 
 Review the merge request for React patterns, hooks, and component design.
 
-**IMPORTANT: Follow the Code Review Standards section in your prompt EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
+## Code Review Standards
+
+@rules/code-review-standards.md
 
 ## Context
 
@@ -113,7 +115,7 @@ $ARGUMENTS
 
 ## Output
 
-1. Post issues as **threads** to GitLab on specific lines using the **Comment Format** from the Code Review Standards above.
-2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards above.
+1. Post issues as **threads** to GitLab on specific lines using the **Comment Format** from the Code Review Standards.
+2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards.
 
 Then return issue counts and component architecture assessment.

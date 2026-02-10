@@ -6,7 +6,9 @@ model: opus
 
 Review the merge request for git hygiene, commit quality, and PR standards.
 
-**IMPORTANT: Follow the Code Review Standards section in your prompt EXACTLY for all comment formats, prefixes, summary note format, and severity guidelines.**
+## Code Review Standards
+
+@rules/code-review-standards.md
 
 ## Context
 
@@ -80,6 +82,6 @@ $ARGUMENTS
 ## Output
 
 1. Post issues as **threads** using the **Comment Format** from the Code Review Standards above, using `mcp__gitlab-mcp__create_merge_request_thread` without position parameter (git/PR issues are not tied to specific file lines).
-2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards above.
+2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards.
 
 Then return commit quality and PR structure assessment.

@@ -67,16 +67,6 @@ Read and execute the discovery agent instructions from `@agents/discovery.md` wi
 
 **Wait for the Discovery Agent to complete** and store its output as `{architecture_context}`.
 
-### Step 4b: Read Code Review Standards
-
-**CRITICAL:** Before spawning review agents, read the code review standards file:
-
-```
-Read file: rules/code-review-standards.md
-```
-
-Store the **entire contents** as `{code_review_standards}`. This content MUST be embedded verbatim in every agent prompt.
-
 ### Step 5: Spawn Enabled Review Agents in Parallel
 
 Launch only the **enabled agents** simultaneously using a single message with multiple Task tool calls.
@@ -98,12 +88,6 @@ Each agent prompt should include:
 - base_sha: {diff_refs.base_sha}
 - head_sha: {diff_refs.head_sha}
 - start_sha: {diff_refs.start_sha}
-
----
-
-## Code Review Standards (MUST FOLLOW EXACTLY)
-
-{code_review_standards}
 
 ---
 
@@ -236,13 +220,11 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 │     ├── Find existing abstractions to recommend             │
 │     └── Output: Clean Architecture Context markdown         │
 │                                                             │
-│  4b. READ CODE REVIEW STANDARDS                             │
-│      └── Read rules/code-review-standards.md (embed full)   │
-│                                                             │
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
-│     ├── All receive: Diffs + Architecture Context +         │
-│     │   Full embedded Code Review Standards content         │
+│     ├── Each agent has @rules/code-review-standards.md      │
+│     │   embedded in its prompt via @ reference              │
+│     ├── All receive: Diffs + Architecture Context           │
 │     ├── Each posts comments directly to GitLab              │
 │     └── Each returns: Issue counts + findings               │
 │                                                             │
@@ -258,9 +240,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid (uses Haiku for efficiency)
 2. **Configuration**: Read `.claude/review-config.yml` from user's project to determine enabled agents
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
-4. **Code Review Standards**: MUST read `rules/code-review-standards.md` and embed the **entire file contents** verbatim into each agent's prompt (not just a reference)
+4. **Code Review Standards**: Each agent prompt includes `@rules/code-review-standards.md` which is automatically resolved by the Agent SDK
 5. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
-6. **Context Sharing**: All review agents receive the same Architecture Context AND the same embedded Code Review Standards
+6. **Context Sharing**: All review agents receive the same Architecture Context
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab
 8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
 
