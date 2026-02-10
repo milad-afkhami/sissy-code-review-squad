@@ -146,12 +146,20 @@ Each agent returns:
 
 ### Step 7: Post Summary Note
 
+**First, read the plugin version:**
+```
+Read file: package.json
+```
+Extract the `version` field (e.g., "1.0.6") and store as `{plugin_version}`.
+
 Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_note`:
 
 ```markdown
 ![Puppet Master](https://milad-afkhami.com/images/blog/sissy/puppet-master-sissy.jpg){width=300 height=300}
 
 ## Comprehensive Code Review Summary
+
+> **Reviewed by:** Sissy Code Review Squad v{plugin_version}
 
 {If any agents were skipped, show:}
 > **Note:** Some agents were skipped for this review: {list of skipped agent names}
