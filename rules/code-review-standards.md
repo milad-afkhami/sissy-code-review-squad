@@ -1,28 +1,19 @@
 # Code Review Standards
 
-## Principles
+## Comment Format (MANDATORY)
 
-- Be kind, specific, and concise
-- Explain _why_, not just _what_
-- Suggest solutions when possible
-- Assume good intent
+ALL comments MUST follow this exact structure:
 
-## Comment Prefixes (Required)
+## Severity Prefixes (REQUIRED)
 
-| Prefix            | Meaning                               | Blocking? |
-| ----------------- | ------------------------------------- | --------- |
-| `❗ [blocking]`   | Must fix before merge                 | Yes       |
-| `💡 [suggestion]` | Recommended improvement               | No        |
-| `💅 [nit]`        | Style preference, Minor best practice | No        |
-| `❓ [question]`   | Needs clarification                   | No        |
+- `❗ [blocking]` - Must fix before merge
+- `💡 [suggestion]` - Recommended improvement
+- `💅 [nit]` - Style preference
+- `❓ [question]` - Needs clarification
 
-## Comment Format
-
-All comments must start with a SubAgent identifier followed by the severity prefix:
-
-```markdown
+```
 > SubAgent: {emoji} {AgentName}
-> **{prefix}** Brief title
+> **{prefix}** Brief issue title
 
 Explanation with context.
 
@@ -32,7 +23,7 @@ Explanation with context.
 Why this matters.
 ```
 
-### SubAgent Headers (The Squad)
+## SubAgent Headers
 
 - `> SubAgent: 🦯 Colorblind Sissy (Accessibility)`
 - `> SubAgent: 🔒 SecuSissy (Security)`
@@ -45,9 +36,7 @@ Why this matters.
 - `> SubAgent: 📚 Detached-HEAD Sissy (Git)`
 - `> SubAgent: ✅ BugSlayer Sissy (QA)`
 
-### Example Comments
-
-**Blocking Issue:**
+### Example
 
 ```markdown
 > SubAgent: 🔒 SecuSissy (Security)
@@ -61,115 +50,26 @@ This API key is visible in client-side code and can be extracted by anyone.
 This is a critical security vulnerability that could lead to unauthorized access.
 ```
 
-**Suggestion:**
-
-```markdown
-> SubAgent: ⚛️ Hooked Sissy (React)
-> **💡 [suggestion]** Extract repeated logic into custom hook
-
-This component has duplicate data fetching logic that appears in 3 places.
-
-**Current:** Inline fetch logic in each component
-**Suggested:** Create `useUserData()` hook to centralize the logic
-
-This improves maintainability and reduces bundle size.
-```
-
-**Nit:**
-
-```markdown
-> SubAgent: 📝 Unknown Sissy (TypeScript)
-> **💅 [nit]** Use more specific type instead of generic object
-
-**Current:** `data: object`
-**Suggested:** `data: { id: number; name: string }`
-
-More specific types improve IDE autocomplete and catch errors earlier.
-```
-
-## When to Use Each Prefix
-
-**❗ Blocking:** Security vulnerabilities, WCAG A/AA violations, memory leaks, type safety violations (`any`), SEO content hidden from crawlers, missing error handling for critical paths.
-
-**💡 Suggestion:** Pattern improvements, optimizations with measurable impact, better organization, WCAG AAA improvements.
-
-**💅 Nit:** Code style, naming preferences, optional refactoring, minor documentation. Must be actionable with a concrete suggestion. Do not praise or congratulate the developer ("Great job!", "Nice work here!").
-
-**❓ Question:** Unclear intent, potential issues needing confirmation, design decisions needing context.
-
 ## GitLab MCP Tool Usage
 
-**CRITICAL: Use the correct MCP tool for each type of comment:**
+**For individual issues:** Use `mcp__gitlab-mcp__create_merge_request_thread`. When the issue relates to a specific file/line, include the `position` parameter (highly encouraged when applicable)
 
-### For Code-Specific Issues (Blocking/Suggestion/Nit/Question)
-
-Use `mcp__gitlab-mcp__create_merge_request_thread`. When the issue relates to a specific file/line, include the `position` parameter (highly encouraged when applicable):
-
-```
-mcp__gitlab-mcp__create_merge_request_thread({
-  project_id: project_id,
-  merge_request_iid: mr_iid,
-  body: "> SubAgent: 🦯 Colorblind Sissy (Accessibility)\n\n> **❗ [blocking]** Issue title\n\nDetailed explanation...",
-  position: {
-    base_sha: diff_refs.base_sha,
-    head_sha: diff_refs.head_sha,
-    start_sha: diff_refs.start_sha,
-    position_type: "text",
-    new_path: "path/to/file.tsx",
-    old_path: "path/to/file.tsx",
-    new_line: 42,
-  },
-});
-```
-
-For MR-level issues with no specific file (e.g., branch naming, commit messages, MR description), omit the `position` parameter:
-
-```
-mcp__gitlab-mcp__create_merge_request_thread({
-  project_id: project_id,
-  merge_request_iid: mr_iid,
-  body: "> SubAgent: 📚 Detached-HEAD Sissy (Git)\n\n> **❗ [blocking]** Branch naming mismatch\n\nThe branch uses `fix/` prefix but commits use `feat` type...",
-});
-```
-
-### For Summary Notes Only
-
-Use `mcp__gitlab-mcp__create_merge_request_note` (NO position parameter):
-
-```
-mcp__gitlab-mcp__create_merge_request_note({
-  project_id: project_id,
-  merge_request_iid: mr_iid,
-  body: "> SubAgent: 🦯 Colorblind Sissy (Accessibility)\n\n![Cover](...)\n\n## Summary...",
-});
-```
-
-### Rules
-
-- **NEVER** use `create_merge_request_note` for individual issues (blocking/suggestion/nit/question)
-- **ALWAYS** use `create_merge_request_thread` for issues - with `position` when pointing to specific code, without position when MR-level
-- **ONLY** use `create_merge_request_note` for summary notes (agent-level and final orchestrator summaries)
+**For agent-level and final orchestrator summary notes:** Use `mcp__gitlab-mcp__create_merge_request_note`
 
 ## Summary Note Format
 
 After completing a review, each agent MUST post a summary note to the MR with this format:
 
 ```markdown
-> SubAgent: {emoji} {AgentName}
-
 ## {Domain} Review Summary
 
-| {AgentName}                                             | Issues Found                                                             |
-| ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X</strong> |
+| {AgentName}                                             | Issues Found                                                                                    |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| ![{AgentName}]({COVER_IMAGE_URL}){width=250 height=250} | <strong>❗ Blocking: X <hr/> 💡 Suggestions: X <hr/> 💅 Nits: X <hr /> ❓ Questions: X</strong> |
 
 ### Key Findings
 
-[Brief summary of main issues and recommendations]
-
-### Verdict
-
-{✅ No blocking issues | ⚠️ Blocking issues found | 💬 Questions need answers}
+[Brief summary]
 ```
 
 ### Agent Cover Images

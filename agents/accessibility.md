@@ -18,6 +18,7 @@ $ARGUMENTS
 
 - [ ] Proper heading hierarchy (h1 → h2 → h3, no skipping)
 - [ ] Semantic elements used (`<button>` not `<div onClick>`, `<nav>`, `<main>`, `<article>`)
+- [ ] Semantic HTML preferred over styling utilities (`<strong>` not `font-bold`, `<em>` not `italic`)
 - [ ] Lists use `<ul>/<ol>/<li>` appropriately
 - [ ] Tables have proper `<thead>`, `<th>`, and scope attributes
 
