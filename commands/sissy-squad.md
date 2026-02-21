@@ -198,6 +198,34 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 **Note:** For skipped agents, show "⏭️ Skipped" instead of counts. Only include enabled agents in totals.
 
+### Issue Distribution
+
+Include these two Mermaid diagrams (with real data from agent results):
+
+**Severity breakdown:**
+
+~~~
+```mermaid
+pie title Issue Severity Distribution
+    "❗ Blocking ({count})" : {blocking_total}
+    "💡 Suggestions ({count})" : {suggestions_total}
+    "💅 Nits ({count})" : {nits_total}
+    "💅 Questions ({count})" : {questions_total}
+```
+~~~
+
+**Issues per agent** (only include enabled agents that found issues):
+
+~~~
+```mermaid
+xychart-beta
+    title "Issues by Agent"
+    x-axis [{list of agent nick names, e.g. "Chick Sissy", "Kiss Sissy"}]
+    y-axis "Issues" 0 --> {max_count + 2}
+    bar [{total issues per agent}]
+```
+~~~
+
 ### Blocking Issues Summary
 
 {List all blocking issues from all agents with file references}

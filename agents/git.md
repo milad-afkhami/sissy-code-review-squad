@@ -81,5 +81,8 @@ $ARGUMENTS
 
 1. Post issues as **threads** using the **Comment Format** from the Code Review Standards above, using `mcp__gitlab-mcp__create_merge_request_thread` without position parameter (git/PR issues are not tied to specific file lines).
 2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards.
+3. Include a Mermaid **Git Graph** in your summary note showing the branch structure and commits. Use the actual commit messages and branch names from the MR.
+
+Reflect the real commits from the MR. Highlight issues visually (e.g. missing commits, messy history).
 
 Then return commit quality and PR structure assessment.
