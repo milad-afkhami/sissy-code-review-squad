@@ -206,11 +206,15 @@ Include these two Mermaid diagrams (with real data from agent results):
 
 ~~~
 ```mermaid
+---
+config:
+  theme: default
+---
 pie title Issue Severity Distribution
     "❗ Blocking ({count})" : {blocking_total}
     "💡 Suggestions ({count})" : {suggestions_total}
     "💅 Nits ({count})" : {nits_total}
-    "💅 Questions ({count})" : {questions_total}
+    "❓ Questions ({count})" : {questions_total}
 ```
 ~~~
 
@@ -218,6 +222,10 @@ pie title Issue Severity Distribution
 
 ~~~
 ```mermaid
+---
+config:
+  theme: default
+---
 xychart-beta
     title "Issues by Agent"
     x-axis [{list of agent nick names, e.g. "Chick Sissy", "Kiss Sissy"}]
