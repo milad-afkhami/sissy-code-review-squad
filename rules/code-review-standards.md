@@ -10,6 +10,7 @@ ALL comments MUST follow this exact structure:
 - `💡 [suggestion]` - Recommended improvement
 - `💅 [nit]` - Style preference
 - `❓ [question]` - Needs clarification
+- `🔄 [needs-work]` - Follow-up: not fully addressed (Police Sissy only)
 
 ```
 > SubAgent: {emoji} {AgentName}
@@ -35,6 +36,7 @@ Why this matters.
 - `> SubAgent: 📝 Unknown Sissy (TypeScript)`
 - `> SubAgent: 📚 Detached-HEAD Sissy (Git)`
 - `> SubAgent: ✅ BugSlayer Sissy (QA)`
+- `> SubAgent: 👮 Police Sissy (Follow-Up Review)`
 
 ### Example
 
@@ -86,6 +88,7 @@ After completing a review, each agent MUST post a summary note to the MR with th
 | 📝 Unknown Sissy (TypeScript)       | `https://milad-afkhami.com/images/blog/sissy/unknown-sissy.jpg`       |
 | 📚 Detached-HEAD Sissy (Git)        | `https://milad-afkhami.com/images/blog/sissy/detached-head-sissy.jpg` |
 | ✅ BugSlayer Sissy (QA)             | `https://milad-afkhami.com/images/blog/sissy/bugslayer-sissy.jpg`     |
+| 👮 Police Sissy (Follow-Up Review)  | `https://milad-afkhami.com/images/blog/sissy/police-sissy.jpg`        |
 | 🎭 Puppet Master (Orchestrator)     | `https://milad-afkhami.com/images/blog/sissy/puppet-master-sissy.jpg` |
 
 ## Output

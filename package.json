@@ -31,7 +31,8 @@
     "plugin": true,
     "commands": [
       "sissy-squad",
-      "clear-mr-comments"
+      "clear-mr-comments",
+      "follow-up-review"
     ],
     "commandAliases": {
       "sissy-code-review-squad": "sissy-squad"
