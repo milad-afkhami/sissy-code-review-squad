@@ -72,7 +72,7 @@ Read and execute the discovery agent instructions from `@agents/discovery.md` wi
 **CRITICAL:** Before spawning review agents, read the code review standards file:
 
 ```
-Read file: rules/code-review-standards.md
+Read file: ${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md
 ```
 
 Store the **entire contents** as `{code_review_standards}`. This content MUST be embedded verbatim in every agent prompt.
@@ -164,7 +164,7 @@ Each agent returns:
 
 **First, read the plugin version:**
 ```
-Read file: package.json
+Read file: ${CLAUDE_PLUGIN_ROOT}/package.json
 ```
 Extract the `version` field (e.g., "1.0.6") and store as `{plugin_version}`.
 
@@ -281,7 +281,8 @@ xychart-beta
 │     └── Output: Clean Architecture Context markdown         │
 │                                                             │
 │  4b. READ CODE REVIEW STANDARDS                             │
-│     └── Read rules/code-review-standards.md (to embed)      │
+│     └── Read ${CLAUDE_PLUGIN_ROOT}/rules/code-review-       │
+│         standards.md (to embed)                              │
 │                                                             │
 │  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
 │     ├── Only spawn agents enabled in config                 │
@@ -302,7 +303,7 @@ xychart-beta
 1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid (uses Haiku for efficiency)
 2. **Configuration**: Read `.claude/review-config.yml` from user's project to determine enabled agents
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
-4. **Code Review Standards**: Orchestrator reads `rules/code-review-standards.md` and embeds the full content in each agent's prompt
+4. **Code Review Standards**: Orchestrator reads `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` and embeds the full content in each agent's prompt
 5. **Parallel Reviews**: All enabled review agents MUST be spawned in a single message (use Opus)
 6. **Context Sharing**: All review agents receive the same Architecture Context and Code Review Standards
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab

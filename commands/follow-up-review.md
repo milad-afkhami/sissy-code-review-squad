@@ -194,7 +194,7 @@ Store counts: `{resolved_count}`, `{insufficient_count}`
 **First, read the plugin version:**
 
 ```
-Read file: package.json
+Read file: ${CLAUDE_PLUGIN_ROOT}/package.json
 ```
 
 Extract the `version` field and store as `{plugin_version}`.
