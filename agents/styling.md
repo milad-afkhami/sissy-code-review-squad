@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # 🎨 ChicSissy (Styling Code Review Agent)

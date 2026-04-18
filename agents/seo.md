@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # 🌐 Canonical Sissy (SEO Code Review Agent)

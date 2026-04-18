@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # 📚 Detached-HEAD Sissy (Git & PR Review Agent)

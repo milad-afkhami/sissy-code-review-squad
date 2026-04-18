@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # ✅ BugSlayer Sissy (QA Review Agent)

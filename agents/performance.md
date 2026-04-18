@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # ⚡ TurboSissy (Performance Code Review Agent)

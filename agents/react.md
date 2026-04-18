@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # ⚛️ Hooked Sissy (React Best Practices Review Agent)

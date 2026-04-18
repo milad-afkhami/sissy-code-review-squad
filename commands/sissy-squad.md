@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 description: Run comprehensive code review on a GitLab merge request using 10 specialized agents
 ---
 
@@ -148,7 +148,7 @@ Each agent prompt should include:
 
 **Task Tool Parameters for ALL review agents:**
 - `subagent_type: "general-purpose"`
-- `model: "opus"` ← Use Opus for highest quality reviews
+- Use each agent's own model setting
 
 ### Step 6: Collect Results
 
@@ -300,7 +300,7 @@ xychart-beta
 
 ## Important Notes
 
-1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid (uses Haiku for efficiency)
+1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid
 2. **Configuration**: Read `.claude/review-config.yml` from user's project to determine enabled agents
 3. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet)
 4. **Code Review Standards**: Orchestrator reads `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` and embeds the full content in each agent's prompt

@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 ---
 
 # 🧹 KISS Sissy (Code Quality Review Agent)

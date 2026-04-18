@@ -1,5 +1,5 @@
 ---
-model: opus
+model: sonnet
 description: Follow-up review for a GitLab MR — evaluates addressed threads and resolves or replies
 ---
 
@@ -153,7 +153,6 @@ Each agent prompt should include:
 **Task Tool Parameters for ALL thread evaluator agents:**
 
 - `subagent_type: "general-purpose"`
-- `model: "opus"`
 
 ### Step 6: Process Verdicts
 
@@ -285,7 +284,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 ## Important Notes
 
-1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid (uses Haiku for efficiency)
+1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid
 2. **Reply-based detection**: Classification uses MCP only — no curl or REST API needed. The developer's last non-system reply is evaluated by intent: positive signals (done, fixed, ok, etc.) → `addressed`; pushback on the concern → `disagreement`
 3. **Last reply wins**: A thread is classified by the intent of its last non-system reply
 4. **Discovery Agent**: Only spawned if there are addressed threads to evaluate (uses Sonnet)
