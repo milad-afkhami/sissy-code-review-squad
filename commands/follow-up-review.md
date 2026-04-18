@@ -248,39 +248,31 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 ## Pipeline Overview
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                  FOLLOW-UP REVIEW PIPELINE                   │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. PARSE MR METADATA (Task: MR Parser agent - Haiku)        │
-│     └── Output: {project_id, mr_iid, project_path} JSON      │
-│                                                              │
-│  2. FETCH DISCUSSIONS + CLASSIFY THREADS (MCP)               │
-│     ├── Fetch all unresolved discussion threads              │
-│     ├── Classify by developer's last reply intent            │
-│     └── Buckets: addressed / disagreement / untouched        │
-│                                                              │
-│  3. FETCH MR DATA (GitLab MCP) [skip if 0 addressed]         │
-│     └── Get current MR details + diffs                       │
-│                                                              │
-│  4. ARCHITECTURE DISCOVERY (Task: Discovery agent - Sonnet)  │
-│     └── Output: Architecture context markdown                │
-│                                                              │
-│  5. SPAWN THREAD EVALUATORS (Task: per thread - Opus)        │
-│     ├── One agent per addressed thread                       │
-│     ├── All spawned in parallel (single message)             │
-│     └── Each returns: {verdict, explanation, confidence} JSON│
-│                                                              │
-│  6. PROCESS VERDICTS (serial)                                │
-│     ├── resolved → resolve thread silently via MCP           │
-│     └── insufficient → reply with explanation via MCP        │
-│                                                              │
-│  7. POST SUMMARY NOTE (GitLab MCP)                           │
-│     └── Police Sissy summary with counts and verdicts        │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+1. **PARSE MR METADATA** → Task(parse-mr-metadata)
+   - Output: `{project_id, mr_iid, project_path}` JSON
+
+2. **FETCH DISCUSSIONS + CLASSIFY THREADS** → MCP: mr_discussions (paginate if >100)
+   - Fetch all unresolved discussion threads
+   - Classify by developer's last reply intent
+   - Buckets: `addressed / disagreement / untouched`
+
+3. **FETCH MR DATA** → MCP: get_merge_request + get_merge_request_diffs (skip if 0 addressed)
+   - Get current MR details + diffs
+
+4. **ARCHITECTURE DISCOVERY** → Task(discovery agent)
+   - Output: Architecture context markdown
+
+5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × addressed_threads
+   - One agent per addressed thread
+   - All spawned in parallel (single message)
+   - Each returns: `{verdict, explanation, confidence}` JSON
+
+6. **PROCESS VERDICTS** (serial)
+   - resolved → resolve thread silently via MCP
+   - insufficient → reply with explanation via MCP
+
+7. **POST SUMMARY NOTE** → GitLab MCP
+   - Police Sissy summary with counts and verdicts
 
 ## Important Notes
 

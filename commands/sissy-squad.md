@@ -256,47 +256,35 @@ xychart-beta
 
 ## Pipeline Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CODE REVIEW PIPELINE                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. PARSE MR METADATA (Task: MR Parser agent - Haiku)       │
-│     ├── Extract MR IID from URL                             │
-│     ├── Extract project name from URL                       │
-│     ├── Search GitLab for project                           │
-│     └── Output: {project_id, mr_iid, project_path} JSON     │
-│                                                             │
-│  2. LOAD CONFIGURATION                                      │
-│     └── Read .claude/review-config.yml (user's project)     │
-│                                                             │
-│  3. FETCH MR DATA                                           │
-│     └── Get MR details + diffs from GitLab                  │
-│                                                             │
-│  4. ARCHITECTURE DISCOVERY (Task: Explore agent - Sonnet)   │
-│     ├── Read .claude/rules/*.md documentation               │
-│     ├── Identify affected apps/packages/domains             │
-│     ├── Sample code patterns where docs missing             │
-│     ├── Find existing abstractions to recommend             │
-│     └── Output: Clean Architecture Context markdown         │
-│                                                             │
-│  4b. READ CODE REVIEW STANDARDS                             │
-│     └── Read ${CLAUDE_PLUGIN_ROOT}/rules/code-review-       │
-│         standards.md (to embed)                              │
-│                                                             │
-│  5. SPAWN ENABLED REVIEW AGENTS (in parallel - Opus)        │
-│     ├── Only spawn agents enabled in config                 │
-│     ├── Each receives embedded Code Review Standards        │
-│     ├── All receive: Diffs + Architecture Context           │
-│     ├── Each posts comments directly to GitLab              │
-│     └── Each returns: Issue counts + findings               │
-│                                                             │
-│  6. COLLECT & SUMMARIZE                                     │
-│     ├── Show skipped agents in summary                      │
-│     └── Post summary note to MR                             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+1. **PARSE MR METADATA** → Task(parse-mr-metadata)
+   - Extract MR IID from URL
+   - Extract project name from URL
+   - Search GitLab for project
+   - Output: `{project_id, mr_iid, project_path}` JSON
+
+2. **LOAD CONFIGURATION** → Read `.claude/review-config.yml` (user's project)
+
+3. **FETCH MR DATA** → MCP: get_merge_request + get_merge_request_diffs
+
+4. **ARCHITECTURE DISCOVERY** → Task(discovery)
+   - Read `.claude/rules/*.md` documentation
+   - Identify affected apps/packages/domains
+   - Sample code patterns where docs missing
+   - Find existing abstractions to recommend
+   - Output: Clean Architecture Context markdown
+
+4b. **READ CODE REVIEW STANDARDS** → Read `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` (to embed)
+
+5. **SPAWN ENABLED REVIEW AGENTS** (parallel, single message) → Task × enabled_agents
+   - Only spawn agents enabled in config
+   - Each receives embedded Code Review Standards
+   - All receive: Diffs + Architecture Context
+   - Each posts comments directly to GitLab
+   - Each returns: Issue counts + findings
+
+6. **COLLECT & SUMMARIZE**
+   - Show skipped agents in summary
+   - Post summary note to MR
 
 ## Important Notes
 
