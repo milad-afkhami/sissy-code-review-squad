@@ -88,9 +88,8 @@ Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md`
 - `file_filter`: array of unique `new_path` values from the `addressed` threads classified in Step 2 (exclude nulls)
 
 Wait for the agent to complete. Parse its JSON output to get:
-- `title`, `author`, `source_branch`, `target_branch`, `description`
-- `diff_refs` (base_sha, head_sha, start_sha)
-- `changed_files`: array filtered to only the files referenced by addressed threads
+- `description`: MR description (for discovery context)
+- `changed_files`: array of `{new_path}` — the file paths referenced by addressed threads
 
 ### Step 4: Architecture Discovery
 
@@ -98,8 +97,8 @@ Wait for the agent to complete. Parse its JSON output to get:
 
 Read and execute the discovery agent instructions from `@agents/discovery.md` with:
 
-- **Changed Files**: List all file paths from the diff, one per line
-- **MR Description**: {MR description if available}
+- **Changed Files**: List all `new_path` values from `changed_files`, one per line
+- **MR Description**: {description from Step 3 if available}
 
 **Wait for the Discovery Agent to complete** and store its output as `{architecture_context}`.
 
@@ -113,30 +112,18 @@ Each agent prompt should include:
 ## Thread to Evaluate
 
 **Discussion ID:** {discussion.id}
-**Original File:** {discussion.notes[0].position.new_path or "General comment" if no position}
-**Original Line:** {discussion.notes[0].position.new_line or "N/A" if no position}
+**File Path:** {discussion.new_path or "General comment (no file)" if null}
+**Original Line:** {discussion.new_line or "N/A" if null}
 
 ### Original Review Thread
 
-{For each non-system note in discussion.notes (where system == false):}
-**[{note.author.username}]:**
+{For each note in discussion.notes (where system == false):}
+**[{note.author}]:**
 {note.body}
 
 ---
 
 {End for each}
-
----
-
-## Current MR Diff
-
-### Relevant File Diff
-
-{diff content for the file matching the thread's new_path, or "File not in current diff" if absent}
-
-### All Changed Files (for context)
-
-{list of all changed file paths}
 
 ---
 
@@ -255,8 +242,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
    - Classify by developer's last reply intent
    - Buckets: `addressed / disagreement / untouched`
 
-3. **FETCH MR DATA** → MCP: get_merge_request + get_merge_request_diffs (skip if 0 addressed)
-   - Get current MR details + diffs
+3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter) (skip if 0 addressed)
+   - Fetches only files referenced by addressed threads
+   - Output: `{description, changed_files}` JSON
 
 4. **ARCHITECTURE DISCOVERY** → Task(discovery agent)
    - Output: Architecture context markdown
@@ -264,6 +252,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × addressed_threads
    - One agent per addressed thread
    - All spawned in parallel (single message)
+   - Each reads its file directly from disk (falls back to diff if file absent)
    - Each returns: `{verdict, explanation, confidence}` JSON
 
 6. **PROCESS VERDICTS** (serial)
@@ -284,3 +273,4 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 7. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
 8. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor
 9. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped
+10. **File reads**: Evaluators read source files directly from the local working directory. The source branch must be checked out before running this command. If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.

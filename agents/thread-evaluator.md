@@ -25,8 +25,10 @@ Using that context, determine: **Has the developer's current code sufficiently a
 
 1. Read the first note to understand the EXACT original concern.
 2. Subsequent notes are context, not additional requirements.
-3. Look at the current diff for the file mentioned in the thread position.
-4. Determine if the code change directly addresses the concern.
+3. **Read the current file from disk** using the `File Path` provided above:
+   - If a file path is provided, read it directly from the local working directory. This gives you full context — imports, surrounding functions, the entire file.
+   - If `File Path` is `"General comment (no file)"` or the file does not exist on disk, fall back to the diff text provided above.
+4. Determine if the current code directly addresses the concern.
 
 ### Verdict Rules
 
