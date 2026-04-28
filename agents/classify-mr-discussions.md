@@ -19,6 +19,14 @@ You will receive:
 
 Call `mcp__gitlab-mcp__mr_discussions` with `per_page: 100`. If the result contains exactly 100 items, call again with `page: 2`, then `page: 3`, etc. until a page returns fewer than 100 items or an empty array.
 
+**If the MCP output is too large and gets saved to a file** (you will see a message like "Output too large. Full output saved to: /path/to/file.json"), read that file using the Bash tool:
+
+```bash
+cat /path/to/file.json | python3 -c "import json,sys; data=json.load(sys.stdin); items=[i for item in data if item.get('type')=='text' for i in json.loads(item['text']).get('items',[])]; print(json.dumps(items))"
+```
+
+This extracts the `items` array from the persisted MCP output. Use the resulting array as your discussions list for the steps below.
+
 ### Step 2: Filter to Unresolved Threads
 
 Keep only discussions where ALL of these are true:

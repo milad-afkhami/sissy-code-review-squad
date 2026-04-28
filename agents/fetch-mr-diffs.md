@@ -18,6 +18,15 @@ You will receive:
 
 1. Call `mcp__gitlab-mcp__get_merge_request` with the given `project_id` and `mr_iid`
 2. Call `mcp__gitlab-mcp__get_merge_request_diffs` with the given `project_id` and `mr_iid`
+
+**If either MCP output is too large and gets saved to a file** (you will see a message like "Output too large. Full output saved to: /path/to/file.json"), read that file using the Bash tool:
+
+```bash
+cat /path/to/file.json | python3 -c "import json,sys; data=json.load(sys.stdin); [print(item['text']) for item in data if item.get('type')=='text']"
+```
+
+This prints the raw JSON text from the persisted output. Parse it as the MCP response and continue.
+
 3. If `file_filter` is provided, keep only diffs where `new_path` is in the filter list
 4. Structure and return the output as JSON
 
