@@ -39,42 +39,19 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 - `mr_iid`
 - `project_path`
 
-### Step 2: Fetch Unresolved Discussions and Classify Threads
+### Step 2: Fetch and Classify Discussions
 
-Fetch all MR discussions using MCP:
+Spawn the Discussion Classifier Agent:
 
-```
-mcp__gitlab-mcp__mr_discussions(project_id: "{project_id}", merge_request_iid: "{mr_iid}", per_page: 100)
-```
+Read and execute the classifier agent instructions from `@agents/classify-mr-discussions.md` with:
+- `project_id`: from Step 1
+- `mr_iid`: from Step 1
 
-If there are more than 100 discussions, paginate by calling again with `page: 2`, `page: 3`, etc. until an empty page is returned.
+Wait for the agent to complete. Parse its JSON output to get:
+- `addressed`: array of addressed threads with full note data and file positions
+- `addressed_count`, `disagreement_count`, `untouched_count`
 
-**Filter** to keep only unresolved, resolvable discussion threads:
-
-- `individual_note == false` (real thread, not a standalone note)
-- `notes[0].resolvable == true`
-- `notes[0].resolved == false`
-- `notes[0].system == false`
-
-**Classify** each unresolved thread into one of three categories by examining the non-system notes (`.notes[] | select(.system == false)`):
-
-**Classification rules:**
-
-1. **`addressed`**: The thread has a non-system reply (beyond the original review note) where the developer's **last** reply signals positive intent — they tried to address the concern. Examples: "done", "fixed", "ok", "addressed", "I disagree but did it anyway", "should be good now", etc. Use your judgment to determine if the reply indicates the developer attempted a fix.
-2. **`disagreement`**: The thread has a non-system reply (beyond the original review note) where the developer's **last** reply pushes back on the concern itself — they're arguing the original review comment was wrong or unnecessary. Examples: "I don't think this is an issue because...", "This is intentional", "No, this pattern is correct because...", etc.
-3. **`untouched`**: The thread has only one non-system note (the original review comment). No developer response yet.
-
-**Note:** A thread is classified by the **intent of its last non-system reply**. If the developer first disagreed and later replied "done", the thread is `addressed`.
-
-Store the classified threads and counts: `{addressed_count}`, `{disagreement_count}`, `{untouched_count}`
-
-For `addressed` threads, extract and store:
-
-- `discussion_id` (`.id` of the discussion)
-- All non-system note bodies and authors
-- File position info (`.notes[0].position.new_path`, `.notes[0].position.new_line`) if available
-
-If there are **zero addressed threads**, skip to Step 7 (post summary) with a note that no threads have been addressed yet.
+If `addressed_count == 0`, skip to Step 7 (post summary).
 
 ### Step 3: Fetch MR Data
 
@@ -237,10 +214,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 1. **PARSE MR METADATA** → Task(parse-mr-metadata)
    - Output: `{project_id, mr_iid, project_path}` JSON
 
-2. **FETCH DISCUSSIONS + CLASSIFY THREADS** → MCP: mr_discussions (paginate if >100)
-   - Fetch all unresolved discussion threads
-   - Classify by developer's last reply intent
-   - Buckets: `addressed / disagreement / untouched`
+2. **FETCH DISCUSSIONS + CLASSIFY THREADS** → Task(classify-mr-discussions)
+   - Fetches, paginates, filters, and classifies all unresolved threads
+   - Output: `{addressed, addressed_count, disagreement_count, untouched_count}` JSON
 
 3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter) (skip if 0 addressed)
    - Fetches only files referenced by addressed threads
@@ -265,7 +241,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 ## Important Notes
 
 1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid
-2. **Reply-based detection**: Classification uses MCP only — no curl or REST API needed. The developer's last non-system reply is evaluated by intent: positive signals (done, fixed, ok, etc.) → `addressed`; pushback on the concern → `disagreement`
+2. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context.
 3. **Last reply wins**: A thread is classified by the intent of its last non-system reply
 4. **Discovery Agent**: Only spawned if there are addressed threads to evaluate (uses Sonnet)
 5. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus)
