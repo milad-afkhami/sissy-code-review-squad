@@ -80,18 +80,17 @@ If there are **zero addressed threads**, skip to Step 7 (post summary) with a no
 
 **Only proceed with Steps 3-5 if `{addressed_count} > 0`. If zero addressed threads, skip directly to Step 7.**
 
-Use GitLab MCP to get the current MR diffs (use the dynamically resolved project_id):
+Spawn the MR Diff Fetcher Agent:
 
-```
-mcp__gitlab-mcp__get_merge_request(project_id: "{project_id}", merge_request_iid: "{mr_iid}")
-mcp__gitlab-mcp__get_merge_request_diffs(project_id: "{project_id}", merge_request_iid: "{mr_iid}")
-```
+Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md` with:
+- `project_id`: from Step 1
+- `mr_iid`: from Step 1
+- `file_filter`: array of unique `new_path` values from the `addressed` threads classified in Step 2 (exclude nulls)
 
-Extract and store:
-
-- `title`, `author`, `source_branch`, `target_branch`
-- `description`
-- Full diffs with file paths and changes
+Wait for the agent to complete. Parse its JSON output to get:
+- `title`, `author`, `source_branch`, `target_branch`, `description`
+- `diff_refs` (base_sha, head_sha, start_sha)
+- `changed_files`: array filtered to only the files referenced by addressed threads
 
 ### Step 4: Architecture Discovery
 

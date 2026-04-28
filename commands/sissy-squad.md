@@ -42,19 +42,17 @@ If the file doesn't exist, use all agents enabled by default.
 
 ### Step 3: Fetch MR Data (Once)
 
-Use GitLab MCP to get all data needed by agents (use the dynamically resolved project_id):
+Spawn the MR Diff Fetcher Agent:
 
-```
-mcp__gitlab-mcp__get_merge_request(project_id: "{resolved_project_id}", merge_request_iid: "{iid}")
-mcp__gitlab-mcp__get_merge_request_diffs(project_id: "{resolved_project_id}", merge_request_iid: "{iid}")
-```
+Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md` with:
+- `project_id`: from Step 1
+- `mr_iid`: from Step 1
+- No `file_filter` (fetch all files — sissy-squad needs the full diff)
 
-Extract and store:
-
-- `title`, `author`, `source_branch`, `target_branch`
+Wait for the agent to complete. Parse its JSON output to get:
+- `title`, `author`, `source_branch`, `target_branch`, `description`, `labels`
 - `diff_refs` (base_sha, head_sha, start_sha)
-- Full diffs with file paths and changes
-- `description`, `labels`
+- `changed_files`: array of `{new_path, old_path, new_file, deleted_file, diff}`
 
 ### Step 4: Architecture Discovery
 
