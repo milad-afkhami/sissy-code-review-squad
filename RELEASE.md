@@ -22,44 +22,40 @@ The plugin version is stored in **3 files** that must be kept in sync:
 
 Follow [Semantic Versioning](https://semver.org/):
 
-- **Patch** (1.0.x) - Bug fixes, small improvements
-- **Minor** (1.x.0) - New features, backward compatible
-- **Major** (x.0.0) - Breaking changes
-
-Example: If current version is `1.0.6` and you're adding a bug fix, the next version is `1.0.7`.
+- **Patch** (x.y.Z) - Bug fixes, small improvements
+- **Minor** (x.Y.0) - New features, backward compatible
+- **Major** (X.0.0) - Breaking changes
 
 ### Step 2: Update All Version Files
 
 **CRITICAL:** Update the version in ALL THREE files to the same value.
 
 ```bash
-# Example: Updating to version 1.0.7
-
 # 1. Update package.json
-# Change: "version": "1.0.6" → "version": "1.0.7"
+# Change: "version": "<old>" → "version": "<new>"
 
 # 2. Update .claude-plugin/plugin.json
-# Change: "version": "1.0.6" → "version": "1.0.7"
+# Change: "version": "<old>" → "version": "<new>"
 
 # 3. Update .claude-plugin/marketplace.json
-# Change: "version": "1.0.6" → "version": "1.0.7"
+# Change: "version": "<old>" → "version": "<new>"
 ```
 
 ### Step 3: Commit Version Bump
 
 ```bash
 git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
-git commit -m "chore: bump version to 1.0.7"
+git commit -m "chore: bump version to <new-version>"
 ```
 
 ### Step 4: Create Git Tag
 
 ```bash
 # Create annotated tag with version
-git tag -a v1.0.7 -m "Release v1.0.7"
+git tag -a v<new-version> -m "Release v<new-version>"
 
 # Verify tag was created
-git tag -l "v1.0.7"
+git tag -l "v<new-version>"
 ```
 
 ### Step 5: Push to Remote
@@ -69,16 +65,33 @@ git tag -l "v1.0.7"
 git push origin main
 
 # Push tags
-git push origin v1.0.7
+git push origin v<new-version>
 ```
 
 ### Step 6: Create GitHub Release
 
-1. Go to: https://github.com/milad-afkhami/sissy-code-review-squad/releases/new
-2. Select the tag you just pushed (v1.0.7)
-3. Title: `v1.0.7`
-4. Description: Write release notes (see template below)
-5. Click "Publish release"
+Use the `gh` CLI to create the release directly (no browser needed):
+
+```bash
+gh release create v<new-version> --title "v<new-version>" --notes "## What's Changed
+
+### ✨ Features
+- ...
+
+**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v<prev-version>...v<new-version>"
+```
+
+The release will appear immediately on the GitHub releases page.
+
+### Step 7: Update Local Plugin
+
+After the GitHub release is published, update the plugin in your Claude Code instance:
+
+```bash
+claude plugin update sissy-code-review-squad
+```
+
+Then **reload your Claude Code window** for the new commands to take effect.
 
 ## Release Notes Template
 
@@ -86,20 +99,18 @@ git push origin v1.0.7
 ## What's Changed
 
 ### 🐛 Bug Fixes
-- Fixed comment formatting to follow correct standards (#issue)
+- ...
 
 ### ✨ Features
-- Added clear-mr-comments command for cleaning up MR comments
-- Show plugin version in review summary notes
+- ...
 
 ### 📝 Documentation
-- Updated release process documentation
+- ...
 
 ### 🔧 Internal
-- Improved agent prompt structure
-- Removed unnecessary orchestrator steps
+- ...
 
-**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v1.0.6...v1.0.7
+**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v<prev-version>...v<new-version>
 ```
 
 ## Verification Checklist
@@ -109,8 +120,9 @@ After releasing, verify:
 - [ ] All three version files show the same version number
 - [ ] Git tag exists: `git tag -l`
 - [ ] Tag is pushed to GitHub: Check tags page on GitHub
-- [ ] GitHub release is published
-- [ ] Users can install the new version: `claude-code plugin install sissy-code-review-squad`
+- [ ] GitHub release is published: `gh release view v<new-version>`
+- [ ] Local plugin updated: `claude plugin update sissy-code-review-squad`
+- [ ] Claude Code window reloaded — new commands available
 
 ## Rollback Procedure
 
@@ -118,10 +130,10 @@ If something goes wrong:
 
 ```bash
 # Delete local tag
-git tag -d v1.0.7
+git tag -d v<new-version>
 
 # Delete remote tag
-git push origin :refs/tags/v1.0.7
+git push origin :refs/tags/v<new-version>
 
 # Revert version bump commit
 git revert HEAD
@@ -151,12 +163,14 @@ set -e  # Exit on error
 # Check if version is provided
 if [ -z "$1" ]; then
   echo "Usage: ./release.sh <version>"
-  echo "Example: ./release.sh 1.0.7"
+  echo "Example: ./release.sh 1.2.0"
   exit 1
 fi
 
 VERSION=$1
 TAG="v$VERSION"
+PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+PREV_VERSION=${PREV_TAG#v}
 
 echo "🚀 Releasing version $VERSION..."
 
@@ -180,14 +194,24 @@ echo "⬆️  Pushing to remote..."
 git push origin main
 git push origin "$TAG"
 
-echo "✅ Release $VERSION complete!"
-echo "📦 Create GitHub release at: https://github.com/milad-afkhami/sissy-code-review-squad/releases/new?tag=$TAG"
+# Create GitHub release
+echo "📦 Creating GitHub release..."
+CHANGELOG_URL="https://github.com/milad-afkhami/sissy-code-review-squad/compare/${PREV_TAG}...${TAG}"
+gh release create "$TAG" --title "$TAG" --notes "## What's Changed
+
+**Full Changelog**: $CHANGELOG_URL"
+
+# Update local plugin
+echo "🔌 Updating local plugin..."
+claude plugin update sissy-code-review-squad
+
+echo "✅ Release $VERSION complete! Reload your Claude Code window."
 ```
 
 Usage:
 ```bash
 chmod +x release.sh
-./release.sh 1.0.7
+./release.sh 1.2.0
 ```
 
 ## Post-Release
