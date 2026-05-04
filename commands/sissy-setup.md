@@ -184,13 +184,23 @@ const selected = await checkbox({
 writeFileSync('/tmp/sissy-agents.json', JSON.stringify(selected));
 ```
 
-Then install the dependency and run:
+First install the dependency (this can run non-interactively):
 
 ```bash
-cd /tmp/sissy-setup-tui && npm install --save @inquirer/checkbox --quiet && node index.mjs
+cd /tmp/sissy-setup-tui && npm install --save @inquirer/checkbox --quiet
 ```
 
-Wait for the process to complete. The user interacts with the TUI directly in the terminal.
+Then print this message to the user and **stop — do not attempt to run the TUI yourself**:
+
+```
+🎛️  Ready! Run this in your terminal prompt to launch the agent selector:
+
+! cd /tmp/sissy-setup-tui && node index.mjs
+
+Use Space to toggle agents, Enter to confirm. Once done, come back and I'll write the config.
+```
+
+Wait for the user to return and confirm they have run the TUI.
 
 ### Step 8: Config — Write Updated review-config.yml
 
