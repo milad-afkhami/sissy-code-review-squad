@@ -80,7 +80,7 @@ Replaced the ambiguous `{Content from the agent's specific command file}` prose 
 
 **What the fix does:** The `@agents/foo.md` syntax instructs the runtime to resolve each agent file inside the subagent's own context. The orchestrator never reads these files. The "Agent File" column in the agent table provides the exact path per agent.
 
-**Validation status:** Awaiting a real MR run on v1.8.0. Success signature: no `Read(agents/security.md)`, `Read(agents/react.md)`, etc. calls appear before the review agents spawn.
+**Validation status:** Validated on MR !2035. No `Read(agents/*.md)` calls appeared anywhere in the orchestrator. Pipeline went directly: parse-mr-metadata → fetch-mr-diffs → discovery → spawn agents. Fix confirmed working.
 
 ---
 
@@ -106,15 +106,14 @@ After each change, ask the user to run the plugin on a real MR and share the Cla
 
 ## v1.8.0 Validation Status
 
-**v1.8.0 has NOT been validated on a real MR yet.**
+**v1.8.0 validated on MR !2035.**
 
-Run `/sissy-code-review-squad:sissy-squad <MR_URL>` on a real MR and share the full output log. Confirm:
+All three success criteria confirmed:
+1. No `Read(agents/*.md)` calls appeared anywhere in the orchestrator log
+2. Pipeline went directly: parse-mr-metadata → fetch-mr-diffs → discovery → spawn agents
+3. All enabled agents (performance, git, qa) completed and posted comments normally
 
-1. No `Read(agents/security.md)` (or any other agent file Read) appears before the review agents spawn
-2. The pipeline goes directly from architecture discovery → spawn all 9 agents
-3. All review agents complete and post comments normally
-
-If the orchestrator still reads agent files, the v1.8.0 fix may need further strengthening (e.g. an explicit "DO NOT read" step at the top of Step 5).
+Phase 2.0 is complete and stable. Next: Phase 2.2 (batch thread evaluators by file).
 
 ---
 
