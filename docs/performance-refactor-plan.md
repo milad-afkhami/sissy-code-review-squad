@@ -16,7 +16,7 @@ Both commands share the same Step 3 anti-pattern. Both benefit from the same fix
 
 ---
 
-## Current Version: 1.6.2
+## Current Version: 1.8.0
 
 ---
 
@@ -72,6 +72,16 @@ cat /path/to/file.json | python3 -c "import json,sys; print(sys.stdin.read())"
 
 `commands/follow-up-review.md` Step 5 now passes `File Path` (one line) instead of embedding a full diff block per evaluator.
 
+### ✅ Phase 2.0 — Fix agent file reference syntax in sissy-squad Step 5 (v1.8.0)
+
+Replaced the ambiguous `{Content from the agent's specific command file}` prose placeholder with explicit `{Content from @agents/<agent-file>.md}` syntax and added a hard prohibition in the Important Notes section against reading agent files before spawning.
+
+**What was observed before the fix (v1.7.x runs):** The orchestrator read all 9 review agent files (~1,000 lines total) into main context sequentially before spawning any subagent. The LLM inferred this from the prose placeholder even though no explicit Read instructions existed.
+
+**What the fix does:** The `@agents/foo.md` syntax instructs the runtime to resolve each agent file inside the subagent's own context. The orchestrator never reads these files. The "Agent File" column in the agent table provides the exact path per agent.
+
+**Validation status:** Awaiting a real MR run on v1.8.0. Success signature: no `Read(agents/security.md)`, `Read(agents/react.md)`, etc. calls appear before the review agents spawn.
+
 ---
 
 ## Validation Protocol
@@ -84,58 +94,35 @@ After each change, ask the user to run the plugin on a real MR and share the Cla
 
 3. **For evaluator changes:** Did each evaluator agent read a file from disk (look for `Read` tool calls in the output)? Did it fall back correctly for general comments?
 
-**How to share a run log:** Copy and paste the full Claude Code conversation output from `/follow-up-review <MR_URL>` directly into the chat. Include:
-- The agent spawn messages (e.g., "Spawning classify-mr-discussions agent...")
+4. **For Phase 2.0 (sissy-squad agent pre-read fix):** Are there any `Read(agents/*.md)` calls in the orchestrator before the review agents spawn? There should be none. The pipeline should go: parse-mr-metadata → fetch-mr-diffs → discovery → spawn all agents.
+
+**How to share a run log:** Copy and paste the full Claude Code conversation output from `/sissy-squad <MR_URL>` or `/follow-up-review <MR_URL>` directly into the chat. Include:
+- The agent spawn messages
 - Any tool call outputs (MCP responses, Read calls, Bash calls)
 - The final summary note content
 - Any errors or fallback messages
 
-This is exactly what was shared for v1.6.0 and v1.6.1 validation — paste the full output log without filtering.
-
 ---
 
-## v1.6.2 Validation Status
+## v1.8.0 Validation Status
 
-**v1.6.2 has NOT been validated on a real MR yet.**
+**v1.8.0 has NOT been validated on a real MR yet.**
 
-Before starting Phase 2.0, ask the user to run `/follow-up-review <MR_URL>` on a real MR with a large number of discussions (ideally the same MR used to catch the v1.6.1 bug) and share the full output log. Confirm:
+Run `/sissy-code-review-squad:sissy-squad <MR_URL>` on a real MR and share the full output log. Confirm:
 
-1. The `classify-mr-discussions` Haiku agent runs and returns clean JSON
-2. If the MCP output was large (saved to file), the agent's Bash extraction succeeded — you should see it print a JSON array, not an error
-3. The addressed thread count matches what the user expects
+1. No `Read(agents/security.md)` (or any other agent file Read) appears before the review agents spawn
+2. The pipeline goes directly from architecture discovery → spawn all 9 agents
+3. All review agents complete and post comments normally
 
-If the agent still fails on large MCP output, the v1.6.2 fix may need further adjustment before Phase 2.0 begins.
+If the orchestrator still reads agent files, the v1.8.0 fix may need further strengthening (e.g. an explicit "DO NOT read" step at the top of Step 5).
 
 ---
 
 ## Phase 2 — Remaining Work
 
-### 2.0 — Fix agent file reference syntax in sissy-squad Step 5 (sissy-squad)
-
-**Status: Not started**
-
-**Rationale:** In `sissy-squad` Step 5, the agent table uses the prose reference `{Content from the agent's specific command file}` to indicate what goes in each spawned agent's prompt. This is ambiguous — the orchestrator may interpret this as a cue to read each agent file into main context before spawning. The correct pattern is `{Content from @agents/foo.md}` using explicit `@agents/...` syntax, which tells the runtime to resolve the file inside the subagent's context, not the orchestrator's.
-
-**Current state of `commands/sissy-squad.md` Step 5** (verified by reading the file):
-- No explicit "Read accessibility.md", "Read security.md" etc. pre-read steps exist in the command file
-- The agent table lists agent files in a column but uses prose: `{Content from the agent's specific command file}`
-- This is potentially ambiguous — a new session may or may not pre-read these files depending on how it interprets the instruction
-
-**What was observed in v1.4.0 real run:** The orchestrator DID read agent files sequentially before spawning. This was the actual behavior even though the command file doesn't have explicit pre-read instructions — the LLM inferred it should read the files.
-
-**Fix:** In the agent table in Step 5 of `commands/sissy-squad.md`, change the "Command Content" column references from prose to explicit `@agents/...` syntax. Update each spawned agent prompt template to use `{Content from @agents/accessibility.md}`, `{Content from @agents/security.md}`, etc. This makes the subagent-resolution intent unambiguous.
-
-**Files to modify:** `commands/sissy-squad.md` Step 5 agent prompt template and agent table
-
-**Before implementing:** Run `sissy-squad` on a real MR on v1.6.2 and share the output. Confirm whether the orchestrator is still reading agent files into main context before Step 5. If it is, the fix is needed. If it isn't, skip this phase.
-
-**Validation:** After the change, run `sissy-squad` on the same MR. The orchestrator should NOT show individual Read tool calls for the 10 agent files before spawning. Time to first agent spawn should be faster.
-
----
-
 ### 2.2 — Batch thread evaluators by file (per-file instead of per-thread)
 
-**Status: Deferred — do not implement yet**
+**Status: Deferred — do not implement until v1.8.0 is validated**
 
 **Rationale:** 60 threads → 60 parallel Opus subagents. At this scale, Task scheduling overhead dominates. Most threads are on distinct files — batching by file means each evaluator reads the file once and evaluates all threads on it in one pass.
 
@@ -143,20 +130,21 @@ If the agent still fails on large MCP output, the v1.6.2 fix may need further ad
 
 **Files to modify:** `commands/follow-up-review.md` Step 5 (bucketing logic + batched agent prompts), `agents/thread-evaluator.md` (handle multiple threads per invocation)
 
-**Before implementing:** Validate Phase 2.0 first. Then revisit this after confirming Phase 1 fixes are stable.
+**Before implementing:** Validate v1.8.0 first. Then revisit after confirming Phase 1 fixes are stable.
 
 ---
 
 ## Expected Impact
 
-| Metric | Before Phase 1 | After Phase 1 (v1.6.x) |
-|--------|---------------|------------------------|
-| Wall time on large MRs | ~1 hour | significantly reduced |
-| Chunk-reads of discussions in main context | many sequential passes | 0 |
-| Diff payload in main context | full MR diff | 0 |
-| Classifier contract failures | possible (prose returned) | 0 (strict JSON output) |
-| Diff payload passed to follow-up evaluators | 100% of MR files | only addressed-thread files |
-| Shared infra between commands | none | `fetch-mr-diffs` agent |
+| Metric | Before Phase 1 | After Phase 1 (v1.6.x) | After Phase 2.0 (v1.8.0) |
+|--------|---------------|------------------------|--------------------------|
+| Wall time on large MRs | ~1 hour | significantly reduced | further reduced |
+| Chunk-reads of discussions in main context | many sequential passes | 0 | 0 |
+| Diff payload in main context | full MR diff | 0 | 0 |
+| Classifier contract failures | possible (prose returned) | 0 (strict JSON output) | 0 |
+| Diff payload passed to follow-up evaluators | 100% of MR files | only addressed-thread files | only addressed-thread files |
+| Agent files read into orchestrator context | ~1,000 lines (9 files) | ~1,000 lines (9 files) | 0 |
+| Shared infra between commands | none | `fetch-mr-diffs` agent | `fetch-mr-diffs` agent |
 
 ---
 
@@ -169,3 +157,7 @@ If the agent still fails on large MCP output, the v1.6.2 fix may need further ad
 | 1.6.0 | Phase 1: `classify-mr-discussions` + `fetch-mr-diffs` agents wired in |
 | 1.6.1 | Fix: Detect and read oversized MCP output in both agents (partial — wrong format) |
 | 1.6.2 | Fix: Correct persisted MCP output extraction — plain JSON format, not wrapped |
+| 1.7.0 | Feature: Add `/sissy-setup` pre-review command |
+| 1.7.1–1.7.3 | Fix: Inquirer TUI → zenity OS dialog for agent selection in sissy-setup |
+| 1.7.4 | Fix: Correct sissy-squad command name in setup summary |
+| 1.8.0 | Phase 2.0: Eliminate orchestrator pre-read of review agent files in sissy-squad |
