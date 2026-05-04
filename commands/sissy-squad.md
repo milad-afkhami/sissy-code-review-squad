@@ -123,16 +123,18 @@ Each agent prompt should include:
 
 ---
 
-{Content from the agent's specific command file}
+{Content from @agents/<agent-file>.md}
 
 ````
+
+The `@agents/<agent-file>.md` placeholder above is replaced per agent row — use the exact `@agents/...` path from the table below. This syntax causes the runtime to resolve the agent file inside the subagent's context, NOT in the orchestrator's context. Do NOT read any agent file before spawning.
 
 ### Review Agents to Spawn (The Squad)
 
 **Only spawn agents that are in the `enabled_agents` list.**
 
-| Config Key | Agent | Command Content | Focus |
-|------------|-------|-----------------|-------|
+| Config Key | Agent | Agent File | Focus |
+|------------|-------|------------|-------|
 | `accessibility` | 🦯 Colorblind Sissy (Accessibility) | `@agents/accessibility.md` | WCAG, ARIA, semantic HTML |
 | `security` | 🔒 SecuSissy (Security) | `@agents/security.md` | XSS, secrets, auth |
 | `performance` | ⚡ TurboSissy (Performance) | `@agents/performance.md` | Re-renders, bundle, CWV |
@@ -294,6 +296,7 @@ xychart-beta
 6. **Context Sharing**: All review agents receive the same Architecture Context and Code Review Standards
 7. **Direct Comments**: Each agent posts its own comments directly to GitLab
 8. **Orchestrator Summary**: Only creates the final summary note (shows skipped agents)
+9. **Agent files**: Do NOT read agent files (security.md, react.md, etc.) before spawning. Use `@agents/foo.md` syntax in each agent's prompt — this resolves inside the subagent's context, not the orchestrator's. Reading agent files into the orchestrator's context is a performance anti-pattern.
 
 ## User Project Setup
 
