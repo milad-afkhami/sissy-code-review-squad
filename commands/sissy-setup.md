@@ -135,8 +135,18 @@ Write the following Node.js ESM script to `/tmp/sissy-setup.mjs`. Before writing
 
 Note: YAML keys with hyphens map to underscores in placeholder names (e.g., `code-quality` → `{{code_quality_enabled}}`).
 
+Create the directory `/tmp/sissy-setup-tui/` and write two files into it:
+
+**`/tmp/sissy-setup-tui/package.json`:**
+
+```json
+{ "type": "module" }
+```
+
+**`/tmp/sissy-setup-tui/index.mjs`** (replace each `{{key_enabled}}` placeholder with the actual boolean from Step 6):
+
 ```javascript
-import { checkbox } from '@inquirer/checkbox';
+import checkbox from '@inquirer/checkbox';
 import { writeFileSync } from 'fs';
 
 const ENABLED_STATE = {
@@ -174,10 +184,10 @@ const selected = await checkbox({
 writeFileSync('/tmp/sissy-agents.json', JSON.stringify(selected));
 ```
 
-Then run:
+Then install the dependency and run:
 
 ```bash
-npx --yes --package=@inquirer/checkbox node /tmp/sissy-setup.mjs
+cd /tmp/sissy-setup-tui && npm install --save @inquirer/checkbox --quiet && node index.mjs
 ```
 
 Wait for the process to complete. The user interacts with the TUI directly in the terminal.
