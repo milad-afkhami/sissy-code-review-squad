@@ -119,92 +119,51 @@ Any key absent from the file defaults to `true`.
 
 ### Step 7: Config — Launch Interactive Toggle UI
 
-First, check that `npx` is available:
+First, check that `zenity` is available:
 
 ```bash
-npx --version
+zenity --version
 ```
 
 If the command fails, **stop immediately** and print:
 
 ```
-❌ npx is required. Please install Node.js (with ESM support).
+❌ zenity is required for the agent selector UI. Install it with: sudo apt install zenity
 ```
 
-Write the following Node.js ESM script to `/tmp/sissy-setup.mjs`. Before writing, replace each `{{key_enabled}}` placeholder with the actual boolean (`true` or `false`) parsed from Step 6.
-
-Note: YAML keys with hyphens map to underscores in placeholder names (e.g., `code-quality` → `{{code_quality_enabled}}`).
-
-Create the directory `/tmp/sissy-setup-tui/` and write two files into it:
-
-**`/tmp/sissy-setup-tui/package.json`:**
-
-```json
-{ "type": "module" }
-```
-
-**`/tmp/sissy-setup-tui/index.mjs`** (replace each `{{key_enabled}}` placeholder with the actual boolean from Step 6):
-
-```javascript
-import checkbox from '@inquirer/checkbox';
-import { writeFileSync } from 'fs';
-
-const ENABLED_STATE = {
-  accessibility:  {{accessibility_enabled}},
-  security:       {{security_enabled}},
-  performance:    {{performance_enabled}},
-  seo:            {{seo_enabled}},
-  styling:        {{styling_enabled}},
-  'code-quality': {{code_quality_enabled}},
-  react:          {{react_enabled}},
-  typescript:     {{typescript_enabled}},
-  git:            {{git_enabled}},
-  qa:             {{qa_enabled}},
-};
-
-const choices = [
-  { value: 'accessibility',  name: '🦯  Colorblind Sissy    (Accessibility)' },
-  { value: 'security',       name: '🔒  SecuSissy           (Security)'      },
-  { value: 'performance',    name: '⚡  TurboSissy          (Performance)'   },
-  { value: 'seo',            name: '🌐  Canonical Sissy     (SEO)'           },
-  { value: 'styling',        name: '🎨  ChicSissy           (Styling)'       },
-  { value: 'code-quality',   name: '🧹  KISS Sissy          (Code Quality)'  },
-  { value: 'react',          name: '⚛️   Hooked Sissy        (React)'         },
-  { value: 'typescript',     name: '📝  Unknown Sissy       (TypeScript)'    },
-  { value: 'git',            name: '📚  Detached-HEAD Sissy (Git)'           },
-  { value: 'qa',             name: '✅  BugSlayer Sissy     (QA)'            },
-].map(agent => ({ ...agent, checked: ENABLED_STATE[agent.value] ?? true }));
-
-const selected = await checkbox({
-  message: 'Select agents to enable for this review (Space to toggle, Enter to confirm):',
-  choices,
-  pageSize: 12,
-});
-
-writeFileSync('/tmp/sissy-agents.json', JSON.stringify(selected));
-```
-
-First install the dependency (this can run non-interactively):
+Run the following command, substituting each `{{KEY}}` placeholder with `TRUE` or `FALSE` based on the enabled state parsed in Step 6 (e.g., if `accessibility` is enabled use `TRUE`, if disabled use `FALSE`):
 
 ```bash
-cd /tmp/sissy-setup-tui && npm install --save @inquirer/checkbox --quiet
+zenity --list \
+  --checklist \
+  --title="Sissy Code Review Squad" \
+  --text="Select agents to enable for this review:" \
+  --column="✓" --column="Agent" --column="Focus" \
+  --width=520 --height=420 \
+  {{ACCESSIBILITY}}  "accessibility"  "🦯  Colorblind Sissy — WCAG, ARIA, semantic HTML" \
+  {{SECURITY}}       "security"       "🔒  SecuSissy — XSS, secrets, auth" \
+  {{PERFORMANCE}}    "performance"    "⚡  TurboSissy — Re-renders, bundle, CWV" \
+  {{SEO}}            "seo"            "🌐  Canonical Sissy — Crawlability, meta, SSR" \
+  {{STYLING}}        "styling"        "🎨  ChicSissy — Tailwind, design system, RTL" \
+  {{CODE_QUALITY}}   "code-quality"   "🧹  KISS Sissy — Readability, DRY, naming" \
+  {{REACT}}          "react"          "⚛️  Hooked Sissy — Hooks, components, state" \
+  {{TYPESCRIPT}}     "typescript"     "📝  Unknown Sissy — Type safety, inference" \
+  {{GIT}}            "git"            "📚  Detached-HEAD Sissy — Commits, PR structure" \
+  {{QA}}             "qa"             "✅  BugSlayer Sissy — Requirements, bugs, tests" \
+  --separator=","
 ```
 
-Then print this message to the user and **stop — do not attempt to run the TUI yourself**:
+Capture the output of this command as `SELECTED_AGENTS`. It will be a comma-separated string of the agent keys the user checked (e.g., `accessibility,security,performance`).
+
+If the user closes the dialog without confirming (zenity exits non-zero), **stop immediately** and print:
 
 ```
-🎛️  Ready! Run this in your terminal prompt to launch the agent selector:
-
-! cd /tmp/sissy-setup-tui && node index.mjs
-
-Use Space to toggle agents, Enter to confirm. Once done, come back and I'll write the config.
+❌ Setup cancelled.
 ```
-
-Wait for the user to return and confirm they have run the TUI.
 
 ### Step 8: Config — Write Updated review-config.yml
 
-Read `/tmp/sissy-agents.json`. It contains a JSON array of the agent keys the user selected as enabled (e.g., `["accessibility","security","performance"]`).
+Use the `SELECTED_AGENTS` comma-separated string from Step 7 to determine which agents are enabled.
 
 Run:
 
@@ -298,5 +257,5 @@ Show the actual enabled/disabled state from the selection. `/sissy-squad <MR_URL
 ## Important Notes
 
 1. The hard reset will silently discard any local commits not on origin. This is intentional — the goal is an exact mirror of origin.
-2. The `/tmp/sissy-setup.mjs` and `/tmp/sissy-agents.json` files are ephemeral — created and read within this command's execution, never committed.
-3. Always write all 10 agent keys to `.claude/review-config.yml`, even if some are disabled.
+2. Always write all 10 agent keys to `.claude/review-config.yml`, even if some are disabled.
+3. `zenity` is required for the agent selector dialog. It is pre-installed on most Ubuntu/GNOME desktops (`sudo apt install zenity` if missing).
