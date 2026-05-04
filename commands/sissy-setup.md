@@ -249,10 +249,10 @@ qa                 ✅ enabled
 
 Run your review:
 
-/sissy-squad <MR_URL>
+/sissy-code-review-squad:sissy-squad <MR_URL>
 ```
 
-Show the actual enabled/disabled state from the selection. `/sissy-squad <MR_URL>` must appear on its own line with a blank line above it.
+Show the actual enabled/disabled state from the selection. `/sissy-code-review-squad:sissy-squad <MR_URL>` must appear on its own line with a blank line above it.
 
 ## Important Notes
 
