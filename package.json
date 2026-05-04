@@ -32,7 +32,8 @@
     "commands": [
       "sissy-squad",
       "clear-mr-comments",
-      "follow-up-review"
+      "follow-up-review",
+      "sissy-setup"
     ],
     "commandAliases": {
       "sissy-code-review-squad": "sissy-squad"
