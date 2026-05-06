@@ -79,28 +79,47 @@ Read and execute the discovery agent instructions from `@agents/discovery.md` wi
 
 **Wait for the Discovery Agent to complete** and store its output as `{architecture_context}`.
 
-### Step 5: Spawn Thread Evaluator Agents (Parallel)
+### Step 5: Spawn Thread Evaluator Agents (Parallel, Batched by File)
 
-Launch one Thread Evaluator Agent per **addressed** thread, all in a single message with multiple Task tool calls (parallel execution).
+**Group addressed threads by file before spawning agents.**
+
+Build a map of buckets keyed by `new_path` (use the string `"__general__"` for threads where `new_path` is null):
+
+```
+buckets = {}
+for each thread in addressed:
+  key = thread.new_path ?? "__general__"
+  buckets[key].push(thread)
+```
+
+Launch **one Thread Evaluator Agent per bucket**, all in a single message with multiple Task tool calls (parallel execution). Each agent handles all threads for one file (or all general comments) in a single pass.
 
 Each agent prompt should include:
 
 ```
-## Thread to Evaluate
+## File Under Review
 
-**Discussion ID:** {discussion.id}
-**File Path:** {discussion.new_path or "General comment (no file)" if null}
-**Original Line:** {discussion.new_line or "N/A" if null}
+**File Path:** {bucket_key or "General comment (no file)" if bucket_key == "__general__"}
+
+## Threads to Evaluate
+
+{For each thread in this bucket:}
+---
+
+**Discussion ID:** {thread.id}
+**Original Line:** {thread.new_line or "N/A" if null}
 
 ### Original Review Thread
 
-{For each note in discussion.notes (where system == false):}
+{For each note in thread.notes (where system == false):}
 **[{note.author}]:**
 {note.body}
 
 ---
 
-{End for each}
+{End for each note}
+
+{End for each thread}
 
 ---
 
@@ -119,7 +138,7 @@ Each agent prompt should include:
 
 ### Step 6: Process Verdicts
 
-Wait for all Thread Evaluator Agents to complete. Parse each agent's JSON output to get `discussion_id`, `verdict`, `explanation`, and `confidence`.
+Wait for all Thread Evaluator Agents to complete. Each agent returns a JSON **array** — flatten all arrays into a single list of verdict objects, each with `discussion_id`, `verdict`, `explanation`, and `confidence`.
 
 Process each verdict **serially** (to avoid race conditions on GitLab's discussion state):
 
@@ -225,11 +244,12 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 4. **ARCHITECTURE DISCOVERY** → Task(discovery agent)
    - Output: Architecture context markdown
 
-5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × addressed_threads
-   - One agent per addressed thread
+5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × file_buckets
+   - Threads are grouped by `new_path` before spawning (null threads → `__general__` bucket)
+   - One agent per bucket (file), each evaluates all threads on that file in one pass
    - All spawned in parallel (single message)
-   - Each reads its file directly from disk (falls back to diff if file absent)
-   - Each returns: `{verdict, explanation, confidence}` JSON
+   - Each reads its file once from disk (falls back to diff if file absent)
+   - Each returns: array of `{verdict, explanation, confidence}` JSON objects, one per thread
 
 6. **PROCESS VERDICTS** (serial)
    - resolved → resolve thread silently via MCP
