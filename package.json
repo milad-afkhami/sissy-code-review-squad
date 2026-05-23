@@ -1,6 +1,6 @@
 {
   "name": "sissy-code-review-squad",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Multi-agent code review plugin for GitLab merge requests. 10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
   "keywords": [
     "claude-code",
