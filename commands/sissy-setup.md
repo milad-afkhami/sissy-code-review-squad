@@ -155,10 +155,10 @@ zenity --list \
 
 Capture the output of this command as `SELECTED_AGENTS`. It will be a comma-separated string of the agent keys the user checked (e.g., `accessibility,security,performance`).
 
-If the user closes the dialog without confirming (zenity exits non-zero), **stop immediately** and print:
+If the user closes the dialog without confirming (zenity exits non-zero), **skip Step 8 entirely** (do not write the config file) and proceed directly to Step 9 using the existing agent state from Step 6. Print:
 
 ```
-❌ Setup cancelled.
+⚠️ Agent selection skipped — keeping existing configuration.
 ```
 
 ### Step 8: Config — Write Updated review-config.yml
@@ -229,7 +229,12 @@ Replace each `<true|false>` with the actual boolean from the selection.
 
 ### Step 9: Summary
 
-Print the final agent state as a table, then the run prompt on its own line:
+Print the final agent state as a table, then the run prompt on its own line.
+
+- If Step 8 ran (user confirmed the dialog), use header: `✅ Config saved to .claude/review-config.yml`
+- If Step 8 was skipped (user cancelled), use header: `✅ Branch ready. Using existing .claude/review-config.yml`
+
+Example output:
 
 ```
 ✅ Config saved to .claude/review-config.yml
@@ -252,7 +257,7 @@ Run your review:
 /sissy-code-review-squad:sissy-squad <MR_URL>
 ```
 
-Show the actual enabled/disabled state from the selection. `/sissy-code-review-squad:sissy-squad <MR_URL>` must appear on its own line with a blank line above it.
+Show the actual enabled/disabled state. `/sissy-code-review-squad:sissy-squad <MR_URL>` must appear on its own line with a blank line above it.
 
 ### Step 10: Desktop Notification
 
