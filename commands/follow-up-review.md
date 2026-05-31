@@ -228,6 +228,14 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 🔄 **{insufficient_count} thread(s) need further attention.** Please address the remaining concerns and run follow-up again.
 ```
 
+After the summary note is posted, run:
+
+```bash
+(result=$(notify-send "👮 Follow-Up Review Complete" "✅ {resolved_count} resolved · 🔄 {insufficient_count} needs work · 💬 {disagreement_count} disagreed · 👀 {untouched_count} untouched" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
+```
+
+Where each count comes from the verdict tallies collected in Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
+
 ## Pipeline Overview
 
 1. **PARSE MR METADATA** → Task(parse-mr-metadata)

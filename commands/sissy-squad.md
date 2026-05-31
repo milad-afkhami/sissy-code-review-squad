@@ -254,6 +254,14 @@ xychart-beta
 *Reviewed by The Squad: Colorblind Sissy (Accessibility), SecuSissy (Security), TurboSissy (Performance), Canonical Sissy (SEO), ChicSissy (Styling), KISS Sissy (Code Quality), Hooked Sissy (React), Unknown Sissy (TypeScript), Detached-HEAD Sissy (Git), BugSlayer Sissy (QA)*
 ````
 
+After the summary note is posted, run:
+
+```bash
+(result=$(notify-send "🎀 Sissy Squad Complete" "MR: {title}\nVerdict: {verdict} — {blocking_total} blocking, {suggestions_total} suggestions, {nits_total} nits" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
+```
+
+Where `{title}` is the MR title, `{verdict}` is one of `✅ APPROVED`, `⚠️ CHANGES REQUESTED`, or `💬 NEEDS DISCUSSION`, and the counts are the totals from Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
+
 ## Pipeline Overview
 
 1. **PARSE MR METADATA** → Task(parse-mr-metadata)

@@ -254,6 +254,14 @@ Run your review:
 
 Show the actual enabled/disabled state from the selection. `/sissy-code-review-squad:sissy-squad <MR_URL>` must appear on its own line with a blank line above it.
 
+### Step 10: Desktop Notification
+
+Run:
+
+```bash
+notify-send "✅ Sissy Setup Complete" "Branch: $ARGUMENTS\nAgents configured. Ready to run sissy-squad." --icon=dialog-information
+```
+
 ## Important Notes
 
 1. The hard reset will silently discard any local commits not on origin. This is intentional — the goal is an exact mirror of origin.
