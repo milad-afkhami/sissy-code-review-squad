@@ -111,6 +111,8 @@ Post **two separate comments** to the MR:
 
 ### Comment 2: Test Checklist
 
+**Post this as a THREAD, not a plain note.** Use `mcp__gitlab-mcp__create_merge_request_thread` with NO `position` parameter.
+
 Use GitLab-compatible checkboxes. Keep test cases SHORT and developer-friendly.
 
 Format: `- [ ] **Test name:** Brief description → Expected result`
@@ -151,7 +153,8 @@ Format: `- [ ] **Test name:** Brief description → Expected result`
 ## Output
 
 1. Post issues as **threads** to GitLab on specific lines using the **Comment Format** from the Code Review Standards.
-2. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards.
+2. Post the **Test Checklist** (Comment 2) as a **thread** via `mcp__gitlab-mcp__create_merge_request_thread` with NO `position` — never a plain note.
+3. Post a summary note using the **EXACT Summary Note Format** from the Code Review Standards.
 
 Then return:
 
