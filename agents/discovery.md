@@ -17,6 +17,8 @@ You are an architecture discovery agent. Your job is to explore the codebase and
 
 **CRITICAL: Your output must be a clean markdown summary. Do NOT include raw file contents or intermediate exploration steps. Summarize what you learned.**
 
+**Project Root:** The orchestrator provides an absolute `Project Root` path (the isolated review worktree checked out to the MR's branch). Explore the project rooted at `Project Root` — resolve every file read, glob, and directory listing under that path (e.g. `{Project Root}/package.json`, `{Project Root}/.claude/rules/*.md`, `{Project Root}/CLAUDE.md`). Do NOT explore the current working directory, which is the reviewer's own checkout, not the code under review. If no `Project Root` is provided, fall back to the current working directory.
+
 ## Discovery Process
 
 ### Step 1: Identify Project Structure
@@ -214,6 +216,7 @@ Based on this codebase, reviewers should:
 
 You will receive:
 
+- `Project Root` — absolute path to the isolated review worktree to explore
 - List of changed file paths from the MR diff
 - Optionally, brief description of what the MR does
 

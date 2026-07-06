@@ -40,6 +40,33 @@ If the file doesn't exist, use all agents enabled by default.
 
 **Agent Keys:** `accessibility`, `security`, `performance`, `seo`, `styling`, `code-quality`, `react`, `typescript`, `git`, `qa`
 
+### Step 2b: Locate the Review Worktree
+
+`/sissy-setup` prepared an isolated worktree (a detached mirror of the MR branch)
+so the review reads the branch's real files without touching your working tree.
+Find it:
+
+```bash
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+if [ ! -f "$STATE_FILE" ]; then
+  echo "NO_STATE"
+else
+  WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE")
+  if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
+    echo "MISSING_WORKTREE"
+  else
+    echo "WORKTREE_PATH=$WORKTREE_PATH"
+  fi
+fi
+```
+
+Interpret the output:
+
+- `NO_STATE` → **stop immediately** and print: `❌ No prepared review worktree. Run /sissy-setup <branch> first.`
+- `MISSING_WORKTREE` → **stop immediately** and print: `❌ The review worktree is missing (removed or lost on reboot). Re-run /sissy-setup <branch>.`
+- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for use in Step 4 and Step 8.
+
 ### Step 3: Fetch MR Data (Once)
 
 Spawn the MR Diff Fetcher Agent:
@@ -60,6 +87,7 @@ Wait for the agent to complete. Parse its JSON output to get:
 
 Read and execute the discovery agent instructions from `@agents/discovery.md` with:
 
+- **Project Root**: {worktree_path from Step 2b}
 - **Changed Files**: List all file paths from the diff, one per line
 - **MR Description**: {MR description if available}
 
@@ -261,6 +289,24 @@ After the summary note is posted, run:
 ```
 
 Where `{title}` is the MR title, `{verdict}` is one of `✅ APPROVED`, `⚠️ CHANGES REQUESTED`, or `💬 NEEDS DISCUSSION`, and the counts are the totals from Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
+
+### Step 8: Clean Up the Review Worktree
+
+The review is complete — remove the isolated worktree and its state file. This
+block is self-contained (it re-reads the path from the state file), so it works
+regardless of shell state from earlier steps:
+
+```bash
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE" 2>/dev/null)
+[ -n "$WORKTREE_PATH" ] && git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+git worktree prune
+rm -f "$STATE_FILE"
+```
+
+Run this even if earlier steps reported issues, so no worktree is left behind. To
+run another review afterward, re-run `/sissy-setup <branch>` first.
 
 ## Pipeline Overview
 

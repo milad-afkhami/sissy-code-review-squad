@@ -25,15 +25,37 @@ If `$ARGUMENTS` contains `://`, `gitlab.`, or `github.`, stop immediately and pr
 ❌ Expected a branch name, not a URL. Usage: /sissy-setup <branch-name>
 ```
 
-### Step 2: Git — Fetch Origin
+> **Isolation guarantee:** This command NEVER modifies your main working tree.
+> The review runs in a separate git worktree, so your uncommitted, unstaged
+> changes in the default checkout are always safe — even though the worktree is a
+> detached mirror of origin. There is no `checkout` or `reset` of your working
+> directory anywhere in this command.
 
-Run:
+### Step 2: Git — Prune Stale Worktree and Fetch
+
+First remove any leftover review worktree from a previous run (e.g. a review that
+crashed before it could clean up), then fetch. This whole block is self-contained
+— it recomputes its paths from git, so it does not rely on variables from other
+steps.
 
 ```bash
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+
+# Tear down an orphaned worktree recorded by a prior run, if any
+if [ -f "$STATE_FILE" ]; then
+  OLD_WT=$(sed -n 's/^worktree_path=//p' "$STATE_FILE")
+  [ -n "$OLD_WT" ] && git worktree remove --force "$OLD_WT" 2>/dev/null
+  rm -f "$STATE_FILE"
+fi
+
+# Reclaim administrative entries for worktrees whose directories are gone
+git worktree prune
+
 git fetch origin
 ```
 
-If the command exits non-zero, **stop immediately** and print:
+If `git fetch origin` exits non-zero, **stop immediately** and print:
 
 ```
 ❌ git fetch failed. Check your network connection and remote configuration.
@@ -41,59 +63,53 @@ If the command exits non-zero, **stop immediately** and print:
 
 Otherwise continue silently.
 
-### Step 3: Git — Check for Dirty Working Tree
+### Step 3: Git — Verify Branch Exists on Origin
 
 Run:
 
 ```bash
-git status --porcelain
-```
-
-If the output is non-empty, print this warning and list the dirty files, then **continue** (do not stop):
-
-```
-⚠️  Warning: You have uncommitted changes:
-<list each dirty file on its own line>
-
-Continuing with checkout — your changes may be overwritten by the hard reset.
-```
-
-If the output is empty, continue silently.
-
-### Step 4: Git — Checkout Branch
-
-Run:
-
-```bash
-git checkout "$ARGUMENTS"
+git rev-parse --verify --quiet "origin/$ARGUMENTS"
 ```
 
 If the command fails (non-zero exit), **stop immediately** and print:
 
 ```
-❌ Branch '$ARGUMENTS' not found. Make sure the branch exists on origin and that `git fetch` succeeded.
+❌ Branch 'origin/$ARGUMENTS' not found. Make sure the branch exists on origin and that `git fetch` succeeded.
 ```
 
 Do not attempt to create the branch.
 
-### Step 5: Git — Hard Reset to Origin
+### Step 4: Git — Create Isolated Review Worktree and Record State
 
-Run:
+Create a fresh, uniquely-named worktree checked out as a **detached mirror** of
+`origin/$ARGUMENTS`, then record its location so `sissy-squad` and
+`follow-up-review` can find it. Detaching avoids any "branch already checked out"
+conflict with your main tree and needs no reset. Creating the worktree and
+writing the state file happen in **one block** so the generated path stays in
+scope.
 
 ```bash
-git reset --hard "origin/$ARGUMENTS"
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+
+WORKTREE_PATH=$(mktemp -u --tmpdir "sissy-review-wt-XXXXXX")
+git worktree add --detach "$WORKTREE_PATH" "origin/$ARGUMENTS" || exit 1
+
+# Record state inside .git (per-clone, never tracked, never committed)
+cat > "$STATE_FILE" <<EOF
+worktree_path=$WORKTREE_PATH
+branch=$ARGUMENTS
+EOF
+
+echo "✅ Isolated review worktree ready at $WORKTREE_PATH (origin/$ARGUMENTS)"
+echo "   Your main working tree is untouched."
 ```
 
-If the command fails (non-zero exit), **stop immediately** and print:
+If `git worktree add` fails (the block exits non-zero), **stop immediately** and
+print:
 
 ```
-❌ Failed to reset to origin/$ARGUMENTS. The branch may not have been pushed to origin.
-```
-
-Otherwise print:
-
-```
-✅ Checked out and reset to origin/$ARGUMENTS
+❌ Failed to create review worktree for origin/$ARGUMENTS. If you're in a restricted or sandboxed environment, creation may have been denied — check that $TMPDIR (or /tmp) is writable and that the worktree path is accessible.
 ```
 
 ### Step 6: Config — Read Existing Agent State
@@ -232,7 +248,7 @@ Replace each `<true|false>` with the actual boolean from the selection.
 Print the final agent state as a table, then the run prompt on its own line.
 
 - If Step 8 ran (user confirmed the dialog), use header: `✅ Config saved to .claude/review-config.yml`
-- If Step 8 was skipped (user cancelled), use header: `✅ Branch ready. Using existing .claude/review-config.yml`
+- If Step 8 was skipped (user cancelled), use header: `✅ Worktree ready. Using existing .claude/review-config.yml`
 
 Example output:
 
@@ -269,6 +285,8 @@ notify-send "✅ Sissy Setup Complete" "Branch: $ARGUMENTS\nAgents configured. R
 
 ## Important Notes
 
-1. The hard reset will silently discard any local commits not on origin. This is intentional — the goal is an exact mirror of origin.
-2. Always write all 10 agent keys to `.claude/review-config.yml`, even if some are disabled.
-3. `zenity` is required for the agent selector dialog. It is pre-installed on most Ubuntu/GNOME desktops (`sudo apt install zenity` if missing).
+1. The review runs in an **isolated git worktree** — a detached mirror of `origin/$ARGUMENTS` created in a unique temp directory. Your main working tree, including uncommitted and unstaged changes, is never touched. `sissy-squad` / `follow-up-review` remove the worktree when they finish, so re-run `/sissy-setup` before each review pass to get a fresh checkout.
+2. The worktree location is recorded in `<git-common-dir>/sissy-review-worktree` (inside `.git/`, never committed). `sissy-squad` and `follow-up-review` read it from there; if it is missing they will tell you to run this setup first.
+3. `review-config.yml` is written to your **main repo** at `.claude/review-config.yml` — it is your per-project preference, independent of the branch under review.
+4. Always write all 10 agent keys to `.claude/review-config.yml`, even if some are disabled.
+5. `zenity` is required for the agent selector dialog. It is pre-installed on most Ubuntu/GNOME desktops (`sudo apt install zenity` if missing).

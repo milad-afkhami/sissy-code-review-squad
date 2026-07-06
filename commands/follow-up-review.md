@@ -39,6 +39,33 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 - `mr_iid`
 - `project_path`
 
+### Step 1b: Locate the Review Worktree
+
+`/sissy-setup` prepared an isolated worktree (a detached mirror of the MR branch,
+re-fetched so it holds the developer's latest pushed code) that the evaluators
+read from. Find it:
+
+```bash
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+if [ ! -f "$STATE_FILE" ]; then
+  echo "NO_STATE"
+else
+  WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE")
+  if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
+    echo "MISSING_WORKTREE"
+  else
+    echo "WORKTREE_PATH=$WORKTREE_PATH"
+  fi
+fi
+```
+
+Interpret the output:
+
+- `NO_STATE` → **stop immediately** and print: `❌ No prepared review worktree. Run /sissy-setup <branch> first.`
+- `MISSING_WORKTREE` → **stop immediately** and print: `❌ The review worktree is missing (removed or lost on reboot). Re-run /sissy-setup <branch>.`
+- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for use in Steps 4, 5, and 8.
+
 ### Step 2: Fetch and Classify Discussions
 
 Spawn the Discussion Classifier Agent:
@@ -74,6 +101,7 @@ Wait for the agent to complete. Parse its JSON output to get:
 
 Read and execute the discovery agent instructions from `@agents/discovery.md` with:
 
+- **Project Root**: {worktree_path from Step 1b}
 - **Changed Files**: List all `new_path` values from `changed_files`, one per line
 - **MR Description**: {description from Step 3 if available}
 
@@ -99,6 +127,7 @@ Each agent prompt should include:
 ```
 ## File Under Review
 
+**Project Root:** {worktree_path from Step 1b}
 **File Path:** {bucket_key or "General comment (no file)" if bucket_key == "__general__"}
 
 ## Threads to Evaluate
@@ -236,6 +265,24 @@ After the summary note is posted, run:
 
 Where each count comes from the verdict tallies collected in Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
 
+### Step 8: Clean Up the Review Worktree
+
+The follow-up is complete — remove the isolated worktree and its state file. **Run
+this on every path**, including when Step 2 found zero addressed threads and you
+skipped ahead to Step 7. The block is self-contained (it re-reads the path from
+the state file):
+
+```bash
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
+WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE" 2>/dev/null)
+[ -n "$WORKTREE_PATH" ] && git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+git worktree prune
+rm -f "$STATE_FILE"
+```
+
+To run another review afterward, re-run `/sissy-setup <branch>` first.
+
 ## Pipeline Overview
 
 1. **PARSE MR METADATA** → Task(parse-mr-metadata)
@@ -277,4 +324,4 @@ Where each count comes from the verdict tallies collected in Step 6. Clicking "O
 7. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
 8. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor
 9. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped
-10. **File reads**: Evaluators read source files directly from the local working directory. The source branch must be checked out before running this command. If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
+10. **File reads**: Evaluators read source files from the isolated review worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt), not the reviewer's own working tree. `/sissy-setup` must have prepared the worktree before running this command. If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
