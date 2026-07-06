@@ -88,7 +88,7 @@ The release will appear immediately on the GitHub releases page.
 After the GitHub release is published, update the plugin in your Claude Code instance:
 
 ```bash
-claude plugin update sissy-code-review-squad
+claude plugin update sissy-code-review-squad@sissy-code-review-squad
 ```
 
 Then **reload your Claude Code window** for the new commands to take effect.
@@ -121,7 +121,7 @@ After releasing, verify:
 - [ ] Git tag exists: `git tag -l`
 - [ ] Tag is pushed to GitHub: Check tags page on GitHub
 - [ ] GitHub release is published: `gh release view v<new-version>`
-- [ ] Local plugin updated: `claude plugin update sissy-code-review-squad`
+- [ ] Local plugin updated: `claude plugin update sissy-code-review-squad@sissy-code-review-squad`
 - [ ] Claude Code window reloaded — new commands available
 
 ## Rollback Procedure
@@ -203,7 +203,7 @@ gh release create "$TAG" --title "$TAG" --notes "## What's Changed
 
 # Update local plugin
 echo "🔌 Updating local plugin..."
-claude plugin update sissy-code-review-squad
+claude plugin update sissy-code-review-squad@sissy-code-review-squad
 
 echo "✅ Release $VERSION complete! Reload your Claude Code window."
 ```
