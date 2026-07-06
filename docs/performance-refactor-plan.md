@@ -72,6 +72,31 @@ cat /path/to/file.json | python3 -c "import json,sys; print(sys.stdin.read())"
 
 `commands/follow-up-review.md` Step 5 now passes `File Path` (one line) instead of embedding a full diff block per evaluator.
 
+### ✅ Phase 2.2 — Batch thread evaluators by file (v1.9.0)
+
+`commands/follow-up-review.md` Step 5 now buckets addressed threads by `new_path` before spawning agents. Threads with `new_path == null` go into a `__general__` bucket. One evaluator agent is spawned per bucket instead of per thread. Each evaluator receives all threads for its file in a single prompt, reads the file once from disk, and returns a JSON **array** of verdicts (one per thread).
+
+`agents/thread-evaluator.md` updated to accept multiple threads, read the file once, and return an array. Step 6 flattens the arrays from all agents before processing verdicts serially.
+
+**Validation status:** Validated on MR !2056.
+
+All success criteria confirmed:
+1. 10 addressed threads, all on `apps/map/src/App.tsx` → **1 evaluator agent** spawned (not 10)
+2. Evaluator used 4 tool calls (read file once, returned array of 10 verdicts) — completed in 39s
+3. Step 6 correctly flattened the array and processed all 10 verdicts serially
+4. All 10 threads resolved with high confidence
+
+**Observed pipeline timings on MR !2056:**
+- `classify-mr-discussions`: 1m 17s
+- `fetch-mr-diffs`: 19s
+- `discovery`: 1m 53s
+- `thread-evaluator` (10 threads, 1 agent): 39s
+- Total wall time: ~4.5 minutes
+
+Phase 2.2 is complete and stable. All performance refactor phases are now validated.
+
+---
+
 ### ✅ Phase 2.0 — Fix agent file reference syntax in sissy-squad Step 5 (v1.8.0)
 
 Replaced the ambiguous `{Content from the agent's specific command file}` prose placeholder with explicit `{Content from @agents/<agent-file>.md}` syntax and added a hard prohibition in the Important Notes section against reading agent files before spawning.
@@ -113,37 +138,29 @@ All three success criteria confirmed:
 2. Pipeline went directly: parse-mr-metadata → fetch-mr-diffs → discovery → spawn agents
 3. All enabled agents (performance, git, qa) completed and posted comments normally
 
-Phase 2.0 is complete and stable. Next: Phase 2.2 (batch thread evaluators by file).
+Phase 2.0 is complete and stable.
 
 ---
 
 ## Phase 2 — Remaining Work
 
-### 2.2 — Batch thread evaluators by file (per-file instead of per-thread)
-
-**Status: Deferred — do not implement until v1.8.0 is validated**
-
-**Rationale:** 60 threads → 60 parallel Opus subagents. At this scale, Task scheduling overhead dominates. Most threads are on distinct files — batching by file means each evaluator reads the file once and evaluates all threads on it in one pass.
-
-**Concern:** Multi-file review comments (a note that references one file but mentions another in the body) must not be silently dropped. Threads with `new_path == null` (general comments) go into a dedicated "general" batch. The orchestrator must explicitly handle this bucketing.
-
-**Files to modify:** `commands/follow-up-review.md` Step 5 (bucketing logic + batched agent prompts), `agents/thread-evaluator.md` (handle multiple threads per invocation)
-
-**Before implementing:** Validate v1.8.0 first. Then revisit after confirming Phase 1 fixes are stable.
+All Phase 2 work is implemented and validated. No remaining items.
 
 ---
 
 ## Expected Impact
 
-| Metric | Before Phase 1 | After Phase 1 (v1.6.x) | After Phase 2.0 (v1.8.0) |
-|--------|---------------|------------------------|--------------------------|
-| Wall time on large MRs | ~1 hour | significantly reduced | further reduced |
-| Chunk-reads of discussions in main context | many sequential passes | 0 | 0 |
-| Diff payload in main context | full MR diff | 0 | 0 |
-| Classifier contract failures | possible (prose returned) | 0 (strict JSON output) | 0 |
-| Diff payload passed to follow-up evaluators | 100% of MR files | only addressed-thread files | only addressed-thread files |
-| Agent files read into orchestrator context | ~1,000 lines (9 files) | ~1,000 lines (9 files) | 0 |
-| Shared infra between commands | none | `fetch-mr-diffs` agent | `fetch-mr-diffs` agent |
+| Metric | Before Phase 1 | After Phase 1 (v1.6.x) | After Phase 2.0 (v1.8.0) | After Phase 2.2 (v1.9.0) |
+|--------|---------------|------------------------|--------------------------|--------------------------|
+| Wall time on large MRs | ~1 hour | significantly reduced | further reduced | further reduced |
+| Chunk-reads of discussions in main context | many sequential passes | 0 | 0 | 0 |
+| Diff payload in main context | full MR diff | 0 | 0 | 0 |
+| Classifier contract failures | possible (prose returned) | 0 (strict JSON output) | 0 | 0 |
+| Diff payload passed to follow-up evaluators | 100% of MR files | only addressed-thread files | only addressed-thread files | only addressed-thread files |
+| Agent files read into orchestrator context | ~1,000 lines (9 files) | ~1,000 lines (9 files) | 0 | 0 |
+| Thread evaluator agents spawned (60-thread MR) | 60 | 60 | 60 | ~unique files (e.g. 8–15) |
+| File reads per evaluator | 1 | 1 | 1 | 1 (shared across all threads on file) |
+| Shared infra between commands | none | `fetch-mr-diffs` agent | `fetch-mr-diffs` agent | `fetch-mr-diffs` agent |
 
 ---
 
@@ -160,3 +177,4 @@ Phase 2.0 is complete and stable. Next: Phase 2.2 (batch thread evaluators by fi
 | 1.7.1–1.7.3 | Fix: Inquirer TUI → zenity OS dialog for agent selection in sissy-setup |
 | 1.7.4 | Fix: Correct sissy-squad command name in setup summary |
 | 1.8.0 | Phase 2.0: Eliminate orchestrator pre-read of review agent files in sissy-squad |
+| 1.9.0 | Phase 2.2: Batch thread evaluators by file — one agent per file instead of per thread |
