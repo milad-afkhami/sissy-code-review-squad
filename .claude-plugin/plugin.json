@@ -1,6 +1,6 @@
 {
   "name": "sissy-code-review-squad",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Multi-agent code review plugin for GitLab merge requests. 10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
   "author": {
     "name": "Milad Afkhami",
