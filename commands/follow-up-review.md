@@ -1,6 +1,6 @@
 ---
 model: sonnet
-description: Follow-up review for a GitLab MR — evaluates addressed threads and resolves or replies
+description: Follow-up review for a GitLab MR — provisions an isolated worktree, evaluates addressed threads, and resolves or replies
 ---
 
 # Follow-Up Review
@@ -9,14 +9,20 @@ Evaluate developer fixes on merge request `$ARGUMENTS` by checking which review 
 
 ## How It Works
 
-This command:
+This is a single self-contained command — there is no separate setup step:
 
 1. Fetches all unresolved discussion threads on the MR
 2. Checks each thread for developer replies to classify them
 3. Categorizes threads into: addressed (developer's reply signals they tried to fix it), disagreement (developer's reply pushes back on the concern), or untouched
-4. For addressed threads, spawns evaluator agents to verify the fix against current code
+4. For addressed threads, provisions an isolated worktree of the MR's **source branch** and spawns evaluator agents to verify each fix against the current code in that worktree
 5. Resolves verified threads; replies with feedback on inadequate fixes
-6. Posts a summary note
+6. Posts a summary note and removes the worktree
+
+Your default checkout — including uncommitted, unstaged changes — is never
+modified. The worktree is a detached mirror of `origin/<source_branch>`, built
+from the MR's own branch (so it can never evaluate against the wrong code) and
+removed when the review finishes. If there are **no addressed threads**, no
+worktree is created at all.
 
 ### Developer Workflow
 
@@ -39,33 +45,6 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 - `mr_iid`
 - `project_path`
 
-### Step 1b: Locate the Review Worktree
-
-`/sissy-setup` prepared an isolated worktree (a detached mirror of the MR branch,
-re-fetched so it holds the developer's latest pushed code) that the evaluators
-read from. Find it:
-
-```bash
-GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
-STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
-if [ ! -f "$STATE_FILE" ]; then
-  echo "NO_STATE"
-else
-  WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE")
-  if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
-    echo "MISSING_WORKTREE"
-  else
-    echo "WORKTREE_PATH=$WORKTREE_PATH"
-  fi
-fi
-```
-
-Interpret the output:
-
-- `NO_STATE` → **stop immediately** and print: `❌ No prepared review worktree. Run /sissy-setup <branch> first.`
-- `MISSING_WORKTREE` → **stop immediately** and print: `❌ The review worktree is missing (removed or lost on reboot). Re-run /sissy-setup <branch>.`
-- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for use in Steps 4, 5, and 8.
-
 ### Step 2: Fetch and Classify Discussions
 
 Spawn the Discussion Classifier Agent:
@@ -78,11 +57,11 @@ Wait for the agent to complete. Parse its JSON output to get:
 - `addressed`: array of addressed threads with full note data and file positions
 - `addressed_count`, `disagreement_count`, `untouched_count`
 
-If `addressed_count == 0`, skip to Step 7 (post summary).
+If `addressed_count == 0`, skip directly to Step 7 (post summary). **No worktree is created and no cleanup is needed** in that case.
 
 ### Step 3: Fetch MR Data
 
-**Only proceed with Steps 3-5 if `{addressed_count} > 0`. If zero addressed threads, skip directly to Step 7.**
+**Only proceed with Steps 3–6 if `{addressed_count} > 0`.**
 
 Spawn the MR Diff Fetcher Agent:
 
@@ -92,8 +71,39 @@ Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md`
 - `file_filter`: array of unique `new_path` values from the `addressed` threads classified in Step 2 (exclude nulls)
 
 Wait for the agent to complete. Parse its JSON output to get:
+- `source_branch`: the MR's source branch (needed to provision the worktree)
 - `description`: MR description (for discovery context)
 - `changed_files`: array of `{new_path}` — the file paths referenced by addressed threads
+
+### Step 3b: Provision the Isolated Worktree
+
+Create a detached worktree mirroring the MR's `source_branch`, re-fetched so it
+holds the developer's latest pushed code. This never touches your working tree.
+Substitute `{source_branch}` with the value from Step 3:
+
+```bash
+# Remove orphaned review worktrees from prior crashed runs.
+# Safe because only one review runs at a time — any existing sissy worktree is a
+# leftover, since this run has not created its own yet.
+git worktree list --porcelain | sed -n 's/^worktree //p' | grep -F '/sissy-review-wt-' | while read -r wt; do
+  git worktree remove --force "$wt" 2>/dev/null
+done
+git worktree prune
+
+git fetch origin || { echo "FETCH_FAILED"; exit 1; }
+git rev-parse --verify --quiet "origin/{source_branch}" >/dev/null || { echo "BRANCH_MISSING"; exit 1; }
+
+WORKTREE_PATH=$(mktemp -u --tmpdir "sissy-review-wt-XXXXXX")
+git worktree add --detach "$WORKTREE_PATH" "origin/{source_branch}" || { echo "WORKTREE_FAILED"; exit 1; }
+echo "WORKTREE_PATH=$WORKTREE_PATH"
+```
+
+Interpret the output:
+
+- `FETCH_FAILED` → **stop** and print `❌ git fetch failed. Check your network connection and remote configuration.`
+- `BRANCH_MISSING` → **stop** and print `❌ origin/{source_branch} not found — has the MR's source branch been pushed?`
+- `WORKTREE_FAILED` → **stop** and print `❌ Could not create the review worktree. If you're in a restricted or sandboxed environment, check that $TMPDIR (or /tmp) is writable.`
+- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for Steps 4, 5, and 8.
 
 ### Step 4: Architecture Discovery
 
@@ -101,7 +111,7 @@ Wait for the agent to complete. Parse its JSON output to get:
 
 Read and execute the discovery agent instructions from `@agents/discovery.md` with:
 
-- **Project Root**: {worktree_path from Step 1b}
+- **Project Root**: {worktree_path from Step 3b}
 - **Changed Files**: List all `new_path` values from `changed_files`, one per line
 - **MR Description**: {description from Step 3 if available}
 
@@ -127,7 +137,7 @@ Each agent prompt should include:
 ```
 ## File Under Review
 
-**Project Root:** {worktree_path from Step 1b}
+**Project Root:** {worktree_path from Step 3b}
 **File Path:** {bucket_key or "General comment (no file)" if bucket_key == "__general__"}
 
 ## Threads to Evaluate
@@ -265,23 +275,18 @@ After the summary note is posted, run:
 
 Where each count comes from the verdict tallies collected in Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
 
-### Step 8: Clean Up the Review Worktree
+### Step 8: Clean Up the Worktree
 
-The follow-up is complete — remove the isolated worktree and its state file. **Run
-this on every path**, including when Step 2 found zero addressed threads and you
-skipped ahead to Step 7. The block is self-contained (it re-reads the path from
-the state file):
+If a worktree was provisioned in Step 3b (i.e. `addressed_count > 0`), remove it.
+Substitute `{worktree_path}` with the path captured in Step 3b:
 
 ```bash
-GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
-STATE_FILE="$GIT_COMMON_DIR/sissy-review-worktree"
-WORKTREE_PATH=$(sed -n 's/^worktree_path=//p' "$STATE_FILE" 2>/dev/null)
-[ -n "$WORKTREE_PATH" ] && git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+git worktree remove --force "{worktree_path}" 2>/dev/null
 git worktree prune
-rm -f "$STATE_FILE"
 ```
 
-To run another review afterward, re-run `/sissy-setup <branch>` first.
+Run this even if earlier steps reported issues, so no worktree is left behind. If
+`addressed_count == 0`, there is no worktree to remove — skip this step.
 
 ## Pipeline Overview
 
@@ -291,37 +296,40 @@ To run another review afterward, re-run `/sissy-setup <branch>` first.
 2. **FETCH DISCUSSIONS + CLASSIFY THREADS** → Task(classify-mr-discussions)
    - Fetches, paginates, filters, and classifies all unresolved threads
    - Output: `{addressed, addressed_count, disagreement_count, untouched_count}` JSON
+   - If 0 addressed → skip to summary (no worktree)
 
-3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter) (skip if 0 addressed)
-   - Fetches only files referenced by addressed threads
-   - Output: `{description, changed_files}` JSON
+3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter)
+   - Output: `{source_branch, description, changed_files}` JSON
 
-4. **ARCHITECTURE DISCOVERY** → Task(discovery agent)
-   - Output: Architecture context markdown
+3b. **PROVISION WORKTREE** → prune orphans → fetch → `git worktree add --detach origin/<source_branch>` → `{worktree_path}`
+
+4. **ARCHITECTURE DISCOVERY** → Task(discovery, Project Root = worktree)
 
 5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × file_buckets
-   - Threads are grouped by `new_path` before spawning (null threads → `__general__` bucket)
-   - One agent per bucket (file), each evaluates all threads on that file in one pass
-   - All spawned in parallel (single message)
-   - Each reads its file once from disk (falls back to diff if file absent)
-   - Each returns: array of `{verdict, explanation, confidence}` JSON objects, one per thread
+   - Threads grouped by `new_path` (null threads → `__general__` bucket)
+   - One agent per bucket, each reads its file once from the worktree
+   - Each returns: array of `{verdict, explanation, confidence}` JSON objects
 
 6. **PROCESS VERDICTS** (serial)
    - resolved → resolve thread silently via MCP
    - insufficient → reply with explanation via MCP
 
 7. **POST SUMMARY NOTE** → GitLab MCP
-   - Police Sissy summary with counts and verdicts
+
+8. **CLEAN UP WORKTREE** → `git worktree remove` + `prune` (only if one was created)
 
 ## Important Notes
 
-1. **MR Metadata Parser**: MUST complete first to get project_id and mr_iid
-2. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context.
-3. **Last reply wins**: A thread is classified by the intent of its last non-system reply
-4. **Discovery Agent**: Only spawned if there are addressed threads to evaluate (uses Sonnet)
-5. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus)
-6. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state
-7. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
-8. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor
-9. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped
-10. **File reads**: Evaluators read source files from the isolated review worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt), not the reviewer's own working tree. `/sissy-setup` must have prepared the worktree before running this command. If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
+1. **Self-contained**: There is no `sissy-setup`. This command provisions the worktree of the MR's source branch itself, evaluates, and cleans up in one run.
+2. **Isolation**: Evaluators read the detached worktree, never the reviewer's working tree. Because the worktree is built from the MR's own `source_branch`, it can never evaluate fixes against the wrong branch.
+3. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context.
+4. **Last reply wins**: A thread is classified by the intent of its last non-system reply.
+5. **Discovery Agent**: Only spawned if there are addressed threads (uses Sonnet). Explores the worktree via its `Project Root` input.
+6. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus).
+7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.
+8. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
+9. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor.
+10. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped.
+11. **File reads**: Evaluators read source files from the worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt). If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
+12. **One review at a time per repo**: the orphan-worktree sweep in Step 3b assumes this.
+```

@@ -27,21 +27,30 @@ claude plugins install sissy-code-review-squad
 
 1. **Install the plugin** (see above)
 
-2. **Copy the configuration template** to your project:
-   ```bash
-   cp node_modules/sissy-code-review-squad/templates/review-config.yml .claude/review-config.yml
-   ```
-
-3. **Run a review** on any GitLab MR:
+2. **Run a review** on any GitLab MR:
    ```
    /sissy-code-review-squad:sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123
    ```
 
-That's it! The squad will review your MR and post comments directly to GitLab.
+On each run, a zenity dialog asks which agents to enable (saved to
+`.claude/review-config.yml`). The squad then reviews the MR in an **isolated git
+worktree** — your working tree, including uncommitted changes, is never touched —
+and posts comments directly to GitLab.
+
+When the developer replies to the threads, run the follow-up to verify the fixes:
+
+```
+/sissy-code-review-squad:follow-up-review https://gitlab.com/your-org/your-project/-/merge_requests/123
+```
+
+Both commands are self-contained: they provision the worktree from the MR's own
+source branch and remove it when done. There is no separate setup step.
 
 ## Configuration
 
-Edit `.claude/review-config.yml` to enable/disable agents:
+`sissy-squad` shows a zenity picker each run and writes your selection to
+`.claude/review-config.yml`. You can also edit that file directly to enable/disable
+agents:
 
 ```yaml
 agents:
@@ -103,20 +112,24 @@ These files help the Discovery agent provide project-specific context to reviewe
 │  1. PARSE MR METADATA                                       │
 │     └── Extract project ID and MR IID from URL              │
 │                                                             │
-│  2. LOAD CONFIGURATION                                      │
-│     └── Read .claude/review-config.yml                      │
+│  2. CONFIGURE AGENTS                                        │
+│     └── zenity picker → write .claude/review-config.yml     │
 │                                                             │
 │  3. FETCH MR DATA                                           │
-│     └── Get MR details + diffs from GitLab                  │
+│     └── Get MR details + diffs (incl. source branch)        │
 │                                                             │
-│  4. ARCHITECTURE DISCOVERY                                  │
-│     └── Gather project context from .claude/rules/          │
+│  4. PROVISION WORKTREE                                      │
+│     └── Detached mirror of origin/<source_branch> in /tmp   │
+│         (your working tree is never touched)                │
 │                                                             │
-│  5. PARALLEL REVIEW                                         │
+│  5. ARCHITECTURE DISCOVERY                                  │
+│     └── Gather project context from the worktree            │
+│                                                             │
+│  6. PARALLEL REVIEW                                         │
 │     └── All enabled agents review simultaneously            │
 │                                                             │
-│  6. SUMMARY                                                 │
-│     └── Post aggregated summary to MR                       │
+│  7. SUMMARY + CLEANUP                                       │
+│     └── Post summary to MR, then remove the worktree        │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -124,8 +137,11 @@ These files help the Discovery agent provide project-specific context to reviewe
 ## Prerequisites
 
 - **Claude Code CLI** (v1.0.0 or later)
+- **Git** (any version with worktree support — 2.5+)
 - **GitLab MCP Server** configured with access token
 - **GitLab Project** with merge requests
+- **zenity** — for the agent-selection dialog (`sudo apt install zenity`; if absent, the review falls back to your existing `.claude/review-config.yml`)
+- **notify-send** (`libnotify`) — for the completion desktop notification (optional)
 
 ### GitLab MCP Setup
 
@@ -150,7 +166,9 @@ Make sure you have the GitLab MCP server configured in your Claude Code settings
 
 | Command | Description |
 |---------|-------------|
-| `/sissy-code-review-squad:sissy-squad <MR_URL>` | Run full code review with all enabled agents |
+| `/sissy-code-review-squad:sissy-squad <MR_URL>` | Pick agents, provision a worktree, run the full review, clean up |
+| `/sissy-code-review-squad:follow-up-review <MR_URL>` | Verify developer fixes on addressed threads and resolve/reply |
+| `/sissy-code-review-squad:clear-mr-comments <MR_URL>` | Remove all Sissy discussions and notes from an MR |
 
 ## Example Output
 
