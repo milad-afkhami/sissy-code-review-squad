@@ -59,13 +59,9 @@ directory. Build a map of `agentKey → enabled` for all 10 keys
 `react`, `typescript`, `git`, `qa`). Any absent key — or a missing file — defaults
 to `true`.
 
-**3b. Check zenity.** Run `zenity --version`. If it fails, print
-`⚠️ zenity not found — using existing agent config (install: sudo apt install zenity)`
-and skip to Step 4 using the map from 3a as the enabled set.
+**3b. Check zenity.** Run `zenity --version`. If it fails — or `$DISPLAY` and `$WAYLAND_DISPLAY` are both empty (a headless session) — print `⚠️ Agent picker unavailable — using existing agent config.` and skip to Step 4 using the map from 3a. Otherwise a display exists, so show the picker; do not skip it because the session "seems" background.
 
-**3c. Show the picker and write the config in ONE bash block** (the selection and
-the file write must share a shell). Substitute each `{{KEY}}` placeholder with
-`TRUE` or `FALSE` based on the map from 3a:
+**3c. Show the picker and write the config in ONE bash block** (selection and file write share a shell). The dialog blocks until the user clicks — run it foreground with a long timeout (Bash `timeout: 600000`); do not background it, wrap it in `timeout`, or kill it. Substitute each `{{KEY}}` with `TRUE`/`FALSE` from 3a:
 
 ```bash
 SELECTED_AGENTS=$(zenity --list --checklist \
