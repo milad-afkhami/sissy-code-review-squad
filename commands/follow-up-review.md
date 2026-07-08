@@ -82,12 +82,9 @@ holds the developer's latest pushed code. This never touches your working tree.
 Substitute `{source_branch}` with the value from Step 3:
 
 ```bash
-# Remove orphaned review worktrees from prior crashed runs.
-# Safe because only one review runs at a time — any existing sissy worktree is a
-# leftover, since this run has not created its own yet.
-git worktree list --porcelain | sed -n 's/^worktree //p' | grep -F '/sissy-review-wt-' | while read -r wt; do
-  git worktree remove --force "$wt" 2>/dev/null
-done
+# Reclaim registry entries whose worktree directory is already gone (e.g. cleared
+# on reboot). This only removes dead entries — never a live worktree — so
+# concurrent reviews on the same repo don't disturb each other.
 git worktree prune
 
 git fetch origin || { echo "FETCH_FAILED"; exit 1; }
@@ -331,5 +328,5 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 9. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor.
 10. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped.
 11. **File reads**: Evaluators read source files from the worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt). If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
-12. **One review at a time per repo**: the orphan-worktree sweep in Step 3b assumes this.
+12. **Concurrent reviews are safe**: each run uses a uniquely-named worktree and removes only its own, so multiple reviews can run against the same repo at once.
 ```

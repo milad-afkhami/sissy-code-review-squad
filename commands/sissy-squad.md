@@ -131,12 +131,9 @@ Create a detached worktree mirroring the MR's `source_branch`. This never touche
 your working tree. Substitute `{source_branch}` with the value from Step 4:
 
 ```bash
-# Remove orphaned review worktrees from prior crashed runs.
-# Safe because only one review runs at a time — any existing sissy worktree is a
-# leftover, since this run has not created its own yet.
-git worktree list --porcelain | sed -n 's/^worktree //p' | grep -F '/sissy-review-wt-' | while read -r wt; do
-  git worktree remove --force "$wt" 2>/dev/null
-done
+# Reclaim registry entries whose worktree directory is already gone (e.g. cleared
+# on reboot). This only removes dead entries — never a live worktree — so
+# concurrent reviews on the same repo don't disturb each other.
 git worktree prune
 
 git fetch origin || { echo "FETCH_FAILED"; exit 1; }
@@ -406,7 +403,7 @@ Run this even if earlier steps (Steps 6–9) reported issues, so no worktree is 
 2. **Isolation**: The review reads a detached worktree mirroring `origin/<source_branch>`. Your main working tree — including uncommitted, unstaged changes — is never touched.
 3. **Config location**: `.claude/review-config.yml` is read and written in your **main repo**, not the worktree. It is your per-project preference, independent of the branch.
 4. **Deterministic config write**: The picker writes the YAML with a bash heredoc/loop, not the Write tool, so the save cannot silently fail.
-5. **One review at a time per repo**: the orphan-worktree sweep in Step 5 assumes this.
+5. **Concurrent reviews are safe**: each run uses a uniquely-named worktree and removes only its own, so multiple reviews can run against the same repo at once.
 6. **MR Metadata Parser**: MUST complete before fetch (needs project_id and mr_iid).
 7. **Discovery Agent**: MUST complete before spawning review agents (uses Sonnet). It explores the worktree via the `Project Root` input.
 8. **Code Review Standards**: Orchestrator reads `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` and embeds the full content in each agent's prompt.
