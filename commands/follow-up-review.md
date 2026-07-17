@@ -28,8 +28,8 @@ worktree is created at all.
 
 After a review, developers should reply to each thread:
 
-- If they've addressed it: reply with something positive like "done", "fixed", "ok", "addressed", etc.
-- If they disagree: reply explaining why they disagree with the concern
+- If they've addressed it: reply with "done"/"fixed"/etc., or simply describe the change they made ("extracted a shared component", "deleted the unused export") — a plain description counts just as well.
+- If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement (skipped for human review), no matter how politely it's phrased.
 
 ## Instructions
 
@@ -55,7 +55,20 @@ Read and execute the classifier agent instructions from `@agents/classify-mr-dis
 
 Wait for the agent to complete. Parse its JSON output to get:
 - `addressed`: array of addressed threads with full note data and file positions
-- `addressed_count`, `disagreement_count`, `untouched_count`
+- `disagreements`: array of `{discussion_id, new_path, reason}` for threads where the developer pushed back
+- `total_unresolved`, `addressed_count`, `disagreement_count`, `untouched_count`
+
+**Consistency guardrail (do this before proceeding):** the classifier decides
+`untouched` mechanically (a thread with a developer reply can never be
+`untouched`), so the counts must reconcile. Verify:
+
+- `addressed_count == len(addressed)`
+- `disagreement_count == len(disagreements)`
+- `addressed_count + disagreement_count + untouched_count == total_unresolved`
+
+If any check fails, or the output contains a `warnings` array, **do not silently
+proceed** — print a short warning noting the discrepancy (and any `warnings`
+entries) so the run is auditable, then continue with the numbers as returned.
 
 If `addressed_count == 0`, skip directly to Step 7 (post summary). **No worktree is created and no cleanup is needed** in that case.
 
@@ -250,7 +263,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 ### Threads Awaiting Human Review
 
-{List threads where the developer disagreed. A human reviewer should evaluate these.}
+{For each thread in `disagreements`, list its `new_path` (or "general comment" if null) and its `reason` — the developer pushed back, so a human reviewer should evaluate these. These are never auto-resolved or auto-replied to.}
 
 ---
 
@@ -291,8 +304,10 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
    - Output: `{project_id, mr_iid, project_path}` JSON
 
 2. **FETCH DISCUSSIONS + CLASSIFY THREADS** → Task(classify-mr-discussions)
-   - Fetches, paginates, filters, and classifies all unresolved threads
-   - Output: `{addressed, addressed_count, disagreement_count, untouched_count}` JSON
+   - Fetches, paginates, filters, splits `untouched` mechanically, and classifies
+     the has-reply threads (`addressed` vs `disagreement`) via judgment
+   - Output: `{addressed, disagreements, total_unresolved, addressed_count, disagreement_count, untouched_count}` JSON
+   - Guardrail: counts must reconcile against `total_unresolved` (see Step 2)
    - If 0 addressed → skip to summary (no worktree)
 
 3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter)
@@ -319,8 +334,8 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 
 1. **Self-contained**: There is no `sissy-setup`. This command provisions the worktree of the MR's source branch itself, evaluates, and cleans up in one run.
 2. **Isolation**: Evaluators read the detached worktree, never the reviewer's working tree. Because the worktree is built from the MR's own `source_branch`, it can never evaluate fixes against the wrong branch.
-3. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context.
-4. **Last reply wins**: A thread is classified by the intent of its last non-system reply.
+3. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context. `untouched` (threads with no developer reply) is decided mechanically by a helper script, so a replied-to thread can never be misfiled as untouched; the model only judges `addressed` vs `disagreement` on threads that have a reply. Note bodies for `addressed` threads are extracted deterministically, not transcribed by the model.
+4. **Last reply wins**: A thread is classified by the intent of its last non-system reply. A long or polite reply that declines the change is a `disagreement`, not `addressed` — the conclusion is judged, not the tone.
 5. **Discovery Agent**: Only spawned if there are addressed threads (uses Sonnet). Explores the worktree via its `Project Root` input.
 6. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus).
 7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.

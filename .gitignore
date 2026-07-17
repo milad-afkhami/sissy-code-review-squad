@@ -39,3 +39,7 @@ pnpm-lock.yaml
 # Temporary files
 *.tmp
 *.temp
+
+# Python cache (scripts/)
+__pycache__/
+*.pyc
