@@ -47,11 +47,23 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 
 ### Step 2: Fetch and Classify Discussions
 
+First, resolve the plugin root so it can be passed to the classifier as a
+literal absolute path (the classifier's helper script lives under it, and
+`${CLAUDE_PLUGIN_ROOT}` is not guaranteed to be set inside a spawned subagent's
+shell — resolving it here, where it is available, removes that dependency):
+
+```bash
+echo "PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT}"
+```
+
+Store the printed path as `{plugin_root}`.
+
 Spawn the Discussion Classifier Agent:
 
 Read and execute the classifier agent instructions from `@agents/classify-mr-discussions.md` with:
 - `project_id`: from Step 1
 - `mr_iid`: from Step 1
+- `plugin_root`: `{plugin_root}` from the command above
 
 Wait for the agent to complete. Parse its JSON output to get:
 - `addressed`: array of addressed threads with full note data and file positions

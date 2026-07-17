@@ -12,27 +12,38 @@ they *disagree* with it?
 
 Everything else — the unresolved filter, deciding which threads are `untouched`,
 and extracting note bodies — is handled deterministically by the helper script
-`${CLAUDE_PLUGIN_ROOT}/scripts/classify_discussions.py`. **Do not** re-implement
-that logic yourself, and **do not** decide `untouched` yourself: a thread with a
-developer reply is NEVER untouched. Your only creative task is the two-way
-`addressed` vs `disagreement` call on the worksheet the script gives you.
+`classify_discussions.py`. **Do not** re-implement that logic yourself, and
+**do not** decide `untouched` yourself: a thread with a developer reply is NEVER
+untouched. Your only creative task is the two-way `addressed` vs `disagreement`
+call on the worksheet the script gives you.
 
 ## Input
 
 You will receive:
 - `project_id`: GitLab project ID (numeric string)
 - `mr_iid`: MR internal ID (numeric string)
+- `plugin_root`: absolute path to the plugin root (the helper script is at
+  `{plugin_root}/scripts/classify_discussions.py`). If this input is missing or
+  empty, fall back to the `${CLAUDE_PLUGIN_ROOT}` environment variable.
 
 ## Task
 
-### Step 1: Create a run directory
+### Step 1: Create a run directory and locate the helper
+
+Substitute `{plugin_root}` below with your `plugin_root` input value (a literal
+absolute path). If `plugin_root` was not provided, use `${CLAUDE_PLUGIN_ROOT}`
+instead — the shell will expand the env var if it is set.
 
 ```bash
 RUN_DIR=$(mktemp -d -t sissy-classify-XXXXXX)
+SCRIPT="{plugin_root}/scripts/classify_discussions.py"
+test -f "$SCRIPT" || { echo "SCRIPT_NOT_FOUND: $SCRIPT"; exit 1; }
 echo "RUN_DIR=$RUN_DIR"
+echo "SCRIPT=$SCRIPT"
 ```
 
-Remember `RUN_DIR` — you will use it in Steps 3, 4, and 5.
+If you see `SCRIPT_NOT_FOUND`, stop and report it — the helper path is wrong.
+Remember `RUN_DIR` and `SCRIPT` — you will use them in Steps 3, 4, and 5.
 
 ### Step 2: Fetch All Discussions (collect them as files)
 
@@ -59,7 +70,7 @@ reshape anything.
 Run the helper's `prep` command with every page file path from Step 2:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/classify_discussions.py" prep \
+python3 "$SCRIPT" prep \
   <page_file_1> [<page_file_2> ...] --out-dir "$RUN_DIR"
 ```
 
@@ -146,7 +157,7 @@ worksheet `discussion_id`. `reason` is a short (≤1 sentence) note — required
 Run the helper's `assemble` command:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/classify_discussions.py" assemble \
+python3 "$SCRIPT" assemble \
   --dir "$RUN_DIR" --classification "$RUN_DIR/classification.json"
 ```
 
