@@ -196,6 +196,15 @@ Each agent prompt should include:
 **MR IID:** {iid}
 **Project ID:** {resolved_project_id}
 
+### Project Root (isolated worktree, checked out to the MR's source branch)
+
+{worktree_path from Step 5}
+
+Read the full changed files and their neighbors here when the diff hunk alone is
+ambiguous (server/client boundaries, existing image dimensions, whether a dynamic
+import already exists). This is a detached mirror of `origin/{source_branch}` — read
+only; do not write to it.
+
 ### Diff Refs (for GitLab comments)
 - base_sha: {diff_refs.base_sha}
 - head_sha: {diff_refs.head_sha}
@@ -390,7 +399,7 @@ Run this even if earlier steps (Steps 6–9) reported issues, so no worktree is 
 6b. **READ CODE REVIEW STANDARDS** → Read `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` (to embed)
 
 7. **SPAWN ENABLED REVIEW AGENTS** (parallel, single message) → Task × enabled_agents
-   - Each receives embedded Code Review Standards + Diffs + Architecture Context
+   - Each receives embedded Code Review Standards + Diffs + Architecture Context + Project Root (worktree)
    - Each posts comments directly to GitLab
 
 8. **COLLECT & SUMMARIZE** → post summary note (shows skipped agents)
