@@ -184,7 +184,16 @@ prose, no markdown fences, no edits. Its shape is:
     }
   ],
   "disagreements": [
-    {"discussion_id": "def…", "new_path": "src/foo.css", "reason": "declined; out of scope"}
+    {
+      "discussion_id": "def…",
+      "new_path": "src/foo.css",
+      "new_line": 17,
+      "notes": [
+        {"author": "milad-afkhami", "body": "Full original review comment text"},
+        {"author": "dev.alisalehi", "body": "Declined — this is intentional because…"}
+      ],
+      "reason": "declined; out of scope"
+    }
   ],
   "total_unresolved": 25,
   "addressed_count": 1,
