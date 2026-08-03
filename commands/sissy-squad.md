@@ -61,12 +61,13 @@ to `true`.
 
 **3b. Check zenity.** Run `zenity --version`. If it fails — or `$DISPLAY` and `$WAYLAND_DISPLAY` are both empty (a headless session) — print `⚠️ Agent picker unavailable — using existing agent config.` and skip to Step 4 using the map from 3a. Otherwise a display exists, so show the picker; do not skip it because the session "seems" background.
 
-**3c. Show the picker and write the config in ONE bash block** (selection and file write share a shell). The dialog blocks until the user clicks — run it foreground with a long timeout (Bash `timeout: 600000`); do not background it, wrap it in `timeout`, or kill it. Substitute each `{{KEY}}` with `TRUE`/`FALSE` from 3a:
+**3c. Show the picker and write the config in ONE bash block** (selection and file write share a shell). The dialog blocks until the user clicks — run it foreground with a long timeout (Bash `timeout: 600000`); do not background it, wrap it in `timeout`, or kill it. Substitute each `{{KEY}}` with `TRUE`/`FALSE` from 3a, and `{project_path}`/`{mr_iid}` with the values from Step 2 (so the picker shows which project and MR this overlay is for):
 
 ```bash
 SELECTED_AGENTS=$(zenity --list --checklist \
   --title="Sissy Code Review Squad" \
-  --text="Select agents to enable for this review:" \
+  --text="Reviewing {project_path} — MR !{mr_iid}
+Select agents to enable for this review:" \
   --column="✓" --column="Agent" --column="Focus" \
   --width=520 --height=420 \
   {{ACCESSIBILITY}}  "accessibility"  "🦯  Colorblind Sissy — WCAG, ARIA, semantic HTML" \
@@ -110,6 +111,11 @@ deterministic. Interpret the output:
 If the resulting enabled set is **empty**, stop and print `No agents enabled — nothing to review.` (No worktree has been created yet, so there is nothing to clean up.)
 
 Store the enabled set as `{enabled_agents}`.
+
+> **Future idea (not implemented yet):** based on the changed files / MR diff, suggest a
+> recommended subset of agents to enable and pre-check those in the picker (instead of
+> defaulting every absent key to `true`). Deferred for now — the picker only identifies the
+> project and MR; it does not yet recommend which agents to activate.
 
 ### Step 4: Fetch MR Data (Once)
 
