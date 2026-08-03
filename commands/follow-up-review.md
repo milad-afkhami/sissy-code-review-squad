@@ -203,7 +203,7 @@ Each agent prompt should include:
 
 ### Step 6: Process Verdicts
 
-Wait for all Thread Evaluator Agents to complete. Each agent returns a JSON **array** — flatten all arrays into a single list of verdict objects, each with `discussion_id`, `verdict`, `explanation`, and `confidence`.
+Wait for all Thread Evaluator Agents to complete. Each agent returns a JSON **array** — flatten all arrays into a single list of verdict objects. `resolved`/`insufficient` (addressed) verdicts carry `discussion_id`, `verdict`, `explanation`, `confidence`; `conceded`/`countered`/`unsure` (disagreement) verdicts carry `discussion_id`, `verdict`, `reply`, `confidence`.
 
 Process each verdict **serially** (to avoid race conditions on GitLab's discussion state):
 
