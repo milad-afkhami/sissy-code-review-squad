@@ -14,8 +14,8 @@ This is a single self-contained command — there is no separate setup step:
 1. Fetches all unresolved discussion threads on the MR
 2. Checks each thread for developer replies to classify them
 3. Categorizes threads into: addressed (developer's reply signals they tried to fix it), disagreement (developer's reply pushes back on the concern), or untouched
-4. For addressed threads, provisions an isolated worktree of the MR's **source branch** and spawns evaluator agents to verify each fix against the current code in that worktree
-5. Resolves verified threads; replies with feedback on inadequate fixes
+4. For addressed **and disagreed** threads, provisions an isolated worktree of the MR's **source branch** and spawns evaluator agents against the current code in that worktree
+5. Resolves verified fixes; replies with feedback on inadequate fixes; and posts a position on each disagreement (agree / counter / your-call) — **never resolving a disagreement**, so you keep the final call
 6. Posts a summary note and removes the worktree
 
 Your default checkout — including uncommitted, unstaged changes — is never
@@ -29,7 +29,7 @@ worktree is created at all.
 After a review, developers should reply to each thread:
 
 - If they've addressed it: reply with "done"/"fixed"/etc., or simply describe the change they made ("extracted a shared component", "deleted the unused export") — a plain description counts just as well.
-- If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement (skipped for human review), no matter how politely it's phrased.
+- If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement — Police Sissy will post a position on it (agree / counter / your-call) but never resolve it, leaving the final call to a human. Tone doesn't change the classification; the conclusion does.
 
 ## Instructions
 
@@ -98,7 +98,7 @@ Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md`
 Wait for the agent to complete. Parse its JSON output to get:
 - `source_branch`: the MR's source branch (needed to provision the worktree)
 - `description`: MR description (for discovery context)
-- `changed_files`: array of `{new_path}` — the file paths referenced by addressed threads
+- `changed_files`: array of `{new_path}` — the file paths referenced by addressed or disagreed threads
 
 ### Step 3b: Provision the Isolated Worktree
 
@@ -141,7 +141,7 @@ Read and execute the discovery agent instructions from `@agents/discovery.md` wi
 
 ### Step 5: Spawn Thread Evaluator Agents (Parallel, Batched by File)
 
-**Group addressed threads by file before spawning agents.**
+**Group addressed and disagreement threads by file before spawning agents.**
 
 Build a map of buckets keyed by `new_path` (use the string `"__general__"` for threads where `new_path` is null):
 
@@ -233,7 +233,28 @@ mcp__gitlab-mcp__create_merge_request_discussion_note(
 )
 ```
 
-Store counts: `{resolved_count}`, `{insufficient_count}`
+**For `verdict == "conceded" | "countered" | "unsure"` (Kind: disagreement):**
+
+Post the evaluator's `reply` to the thread and **do NOT resolve it** — the human decides. Pick the badge/headline by verdict:
+
+| verdict | badge | headline |
+| --- | --- | --- |
+| `conceded` | `✅ [agrees]` | Your pushback holds |
+| `countered` | `↩️ [counter]` | Concern may still stand |
+| `unsure` | `🤔 [your-call]` | Judgment call |
+
+```
+mcp__gitlab-mcp__create_merge_request_discussion_note(
+  project_id: "{project_id}",
+  merge_request_iid: "{mr_iid}",
+  discussion_id: "{discussion_id}",
+  body: "> SubAgent: 👮 Police Sissy (Follow-Up Review)\n> **{badge}** {headline}\n\n{reply}\n\n_You have the final call on this thread — resolve it or reply if you disagree._"
+)
+```
+
+Never call `resolve_merge_request_thread` for a disagreement verdict.
+
+Store counts: `{resolved_count}`, `{insufficient_count}`, `{conceded_count}`, `{countered_count}`, `{unsure_count}`. The three disagreement counts must sum to `{disagreement_count}`.
 
 ### Step 7: Post Summary Note
 
@@ -260,7 +281,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 | ----------------------------------------------------- | -------------------- |
 | ✅ Verified and resolved                              | {resolved_count}     |
 | 🔄 Needs more work                                    | {insufficient_count} |
-| 💬 Developer disagreed — skipped (needs human review) | {disagreement_count} |
+| 💬 Developer disagreed — replied, your decision (✅ {conceded_count} agree · ↩️ {countered_count} counter · 🤔 {unsure_count} your-call) | {disagreement_count} |
 | 👀 Untouched — skipped (awaiting developer)           | {untouched_count}    |
 
 {If resolved_count > 0:}
@@ -277,9 +298,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 {If disagreement_count > 0:}
 
-### Threads Awaiting Human Review
+### Disagreements — Police Sissy Replied, Your Decision
 
-{For each thread in `disagreements`, list its `new_path` (or "general comment" if null) and its `reason` — the developer pushed back, so a human reviewer should evaluate these. These are never auto-resolved or auto-replied to.}
+{For each disagreement, list its `new_path` (or "general comment" if null), Police Sissy's stance (✅ agrees / ↩️ counter / 🤔 your-call), and a one-line gist of the reply. Police Sissy has posted a position in each thread but resolved none — you make the final call.}
 
 ---
 
@@ -296,7 +317,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 After the summary note is posted, run:
 
 ```bash
-(result=$(notify-send "👮 Follow-Up Review Complete" "✅ {resolved_count} resolved · 🔄 {insufficient_count} needs work · 💬 {disagreement_count} disagreed · 👀 {untouched_count} untouched" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
+(result=$(notify-send "👮 Follow-Up Review Complete" "✅ {resolved_count} resolved · 🔄 {insufficient_count} needs work · 💬 {disagreement_count} replied · 👀 {untouched_count} untouched" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
 ```
 
 Where each count comes from the verdict tallies collected in Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
@@ -357,7 +378,7 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.
 8. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
 9. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor.
-10. **Skip policy**: Threads where the developer disagreed and untouched threads are always skipped.
+10. **Skip policy**: Untouched threads are always skipped (awaiting the developer). Disagreements are NOT skipped — Police Sissy posts a position in each, but never auto-resolves; the human decides.
 11. **File reads**: Evaluators read source files from the worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt). If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
 12. **Concurrent reviews are safe**: each run uses a uniquely-named worktree and removes only its own, so multiple reviews can run against the same repo at once.
 ```
