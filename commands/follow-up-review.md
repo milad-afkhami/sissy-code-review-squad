@@ -312,6 +312,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 {Else if insufficient_count > 0:}
 🔄 **{insufficient_count} thread(s) need further attention.** Please address the remaining concerns and run follow-up again.
+
+{Else if disagreement_count > 0:}
+💬 **{disagreement_count} disagreement(s) replied — awaiting your decision.** Review Police Sissy's position in each thread and resolve it or reply.
 ```
 
 After the summary note is posted, run:
@@ -357,11 +360,12 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 5. **SPAWN THREAD EVALUATORS** (parallel, single message) → Task(thread-evaluator) × file_buckets
    - Threads grouped by `new_path` (null threads → `__general__` bucket)
    - One agent per bucket, each reads its file once from the worktree
-   - Each returns: array of `{verdict, explanation, confidence}` JSON objects
+   - Each returns per-thread verdicts: addressed → `resolved|insufficient` + `explanation`; disagreement → `conceded|countered|unsure` + `reply`
 
 6. **PROCESS VERDICTS** (serial)
    - resolved → resolve thread silently via MCP
    - insufficient → reply with explanation via MCP
+   - conceded|countered|unsure → post reply, never resolve
 
 7. **POST SUMMARY NOTE** → GitLab MCP
 
@@ -373,7 +377,7 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 2. **Isolation**: Evaluators read the detached worktree, never the reviewer's working tree. Because the worktree is built from the MR's own `source_branch`, it can never evaluate fixes against the wrong branch.
 3. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context. `untouched` (threads with no developer reply) is decided mechanically by a helper script, so a replied-to thread can never be misfiled as untouched; the model only judges `addressed` vs `disagreement` on threads that have a reply. Note bodies for `addressed` threads are extracted deterministically, not transcribed by the model.
 4. **Last reply wins**: A thread is classified by the intent of its last non-system reply. A long or polite reply that declines the change is a `disagreement`, not `addressed` — the conclusion is judged, not the tone.
-5. **Discovery Agent**: Only spawned if there are addressed threads (uses Sonnet). Explores the worktree via its `Project Root` input.
+5. **Discovery Agent**: Only spawned if there are addressed **or disagreed** threads (uses Sonnet). Explores the worktree via its `Project Root` input.
 6. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus).
 7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.
 8. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
