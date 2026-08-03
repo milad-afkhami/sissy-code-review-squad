@@ -82,18 +82,18 @@ If any check fails, or the output contains a `warnings` array, **do not silently
 proceed** — print a short warning noting the discrepancy (and any `warnings`
 entries) so the run is auditable, then continue with the numbers as returned.
 
-If `addressed_count == 0`, skip directly to Step 7 (post summary). **No worktree is created and no cleanup is needed** in that case.
+If `addressed_count == 0` **and** `disagreement_count == 0`, skip directly to Step 7 (post summary). **No worktree is created and no cleanup is needed** in that case. If either count is > 0, continue.
 
 ### Step 3: Fetch MR Data
 
-**Only proceed with Steps 3–6 if `{addressed_count} > 0`.**
+**Only proceed with Steps 3–6 if `{addressed_count} > 0` OR `{disagreement_count} > 0`.**
 
 Spawn the MR Diff Fetcher Agent:
 
 Read and execute the fetcher agent instructions from `@agents/fetch-mr-diffs.md` with:
 - `project_id`: from Step 1
 - `mr_iid`: from Step 1
-- `file_filter`: array of unique `new_path` values from the `addressed` threads classified in Step 2 (exclude nulls)
+- `file_filter`: array of unique `new_path` values from **both** the `addressed` and `disagreements` threads classified in Step 2 (union; exclude nulls)
 
 Wait for the agent to complete. Parse its JSON output to get:
 - `source_branch`: the MR's source branch (needed to provision the worktree)
@@ -125,7 +125,7 @@ Interpret the output:
 - `FETCH_FAILED` → **stop** and print `❌ git fetch failed. Check your network connection and remote configuration.`
 - `BRANCH_MISSING` → **stop** and print `❌ origin/{source_branch} not found — has the MR's source branch been pushed?`
 - `WORKTREE_FAILED` → **stop** and print `❌ Could not create the review worktree. If you're in a restricted or sandboxed environment, check that $TMPDIR (or /tmp) is writable.`
-- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for Steps 4, 5, and 8.
+- `WORKTREE_PATH=<path>` → store `<path>` as `{worktree_path}` for Steps 4, 5, and 8. A disagreement-only MR (no addressed threads) still reaches this step, so the worktree is available to judge pushbacks against.
 
 ### Step 4: Architecture Discovery
 
@@ -149,7 +149,10 @@ Build a map of buckets keyed by `new_path` (use the string `"__general__"` for t
 buckets = {}
 for each thread in addressed:
   key = thread.new_path ?? "__general__"
-  buckets[key].push(thread)
+  buckets[key].push({ ...thread, kind: "addressed" })
+for each thread in disagreements:
+  key = thread.new_path ?? "__general__"
+  buckets[key].push({ ...thread, kind: "disagreement" })
 ```
 
 Launch **one Thread Evaluator Agent per bucket**, all in a single message with multiple Task tool calls (parallel execution). Each agent handles all threads for one file (or all general comments) in a single pass.
@@ -169,6 +172,7 @@ Each agent prompt should include:
 
 **Discussion ID:** {thread.id}
 **Original Line:** {thread.new_line or "N/A" if null}
+**Kind:** {thread.kind}
 
 ### Original Review Thread
 
@@ -299,7 +303,7 @@ Where each count comes from the verdict tallies collected in Step 6. Clicking "O
 
 ### Step 8: Clean Up the Worktree
 
-If a worktree was provisioned in Step 3b (i.e. `addressed_count > 0`), remove it.
+If a worktree was provisioned in Step 3b (i.e. `addressed_count > 0` OR `disagreement_count > 0`), remove it.
 Substitute `{worktree_path}` with the path captured in Step 3b:
 
 ```bash
@@ -308,7 +312,7 @@ git worktree prune
 ```
 
 Run this even if earlier steps reported issues, so no worktree is left behind. If
-`addressed_count == 0`, there is no worktree to remove — skip this step.
+`addressed_count == 0` and `disagreement_count == 0`, there is no worktree to remove — skip this step.
 
 ## Pipeline Overview
 
@@ -320,7 +324,7 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
      the has-reply threads (`addressed` vs `disagreement`) via judgment
    - Output: `{addressed, disagreements, total_unresolved, addressed_count, disagreement_count, untouched_count}` JSON
    - Guardrail: counts must reconcile against `total_unresolved` (see Step 2)
-   - If 0 addressed → skip to summary (no worktree)
+   - If 0 addressed AND 0 disagreements → skip to summary (no worktree)
 
 3. **FETCH MR DATA** → Task(fetch-mr-diffs, file_filter)
    - Output: `{source_branch, description, changed_files}` JSON
