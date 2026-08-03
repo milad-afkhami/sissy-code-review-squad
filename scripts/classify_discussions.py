@@ -222,6 +222,8 @@ def cmd_assemble(args):
             disagreements.append({
                 "discussion_id": discussion_id,
                 "new_path": record["new_path"],
+                "new_line": record["new_line"],
+                "notes": record["notes"],
                 "reason": (entry["reason"] if entry else "") or "",
             })
 
