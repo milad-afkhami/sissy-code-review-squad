@@ -6,23 +6,30 @@ Common issues and their solutions when using the Sissy Code Review Squad.
 
 ### Plugin Not Found After Installation
 
-**Symptom:** `/sissy-squad` command not available after installing.
+**Symptom:** the Claude command or Codex skill is unavailable after installing.
 
-**Solutions:**
-1. Restart Claude Code:
-   ```bash
-   claude --restart
-   ```
+**Claude Code:**
 
-2. Verify installation:
-   ```bash
-   claude plugins list
-   ```
+```bash
+claude plugins list
+```
 
-3. If installed via npm link, ensure the path is correct:
-   ```bash
-   claude plugins link /absolute/path/to/sissy-code-review-squad
-   ```
+If installed via npm link, verify the linked path:
+
+```bash
+claude plugins link /absolute/path/to/sissy-code-review-squad
+```
+
+**Codex CLI:**
+
+```bash
+codex plugin marketplace list --json
+codex plugin list --json
+```
+
+Confirm `sissy-code-review-squad@sissy-code-review-squad` is installed and
+enabled, then restart Codex. Codex exposes `$sissy-squad` and
+`$follow-up-review`; it does not expose `$clear-mr-comments`.
 
 ### npm Installation Fails
 
@@ -145,9 +152,11 @@ Common issues and their solutions when using the Sissy Code Review Squad.
 **Symptom:** Plugin uses defaults instead of your config.
 
 **Solutions:**
-1. Ensure file is at `.claude/review-config.yml` (not `.yaml`)
+1. Ensure file is at `.sissy/review-config.yml` (not `.yaml`)
 2. Check file permissions
 3. Verify you're running from project root
+4. If only `.claude/review-config.yml` exists, run `sissy-squad` once to copy it
+   to the neutral path; the legacy file remains unchanged
 
 ---
 
@@ -230,7 +239,9 @@ Common issues and their solutions when using the Sissy Code Review Squad.
 
 The GitLab MCP server isn't running or configured.
 
-**Fix:** Ensure GitLab MCP is in your Claude Code configuration.
+**Fix:** Ensure GitLab MCP is configured in the active runtime. In Codex, run
+`codex mcp list`; in Claude Code, inspect the existing MCP settings. The plugin
+does not install the server or credentials.
 
 ### "No Diffs Found"
 
@@ -269,9 +280,10 @@ When reporting issues, include:
    npm list -g sissy-code-review-squad
    ```
 
-2. Claude Code version:
+2. Runtime version:
    ```bash
    claude --version
+   codex --version
    ```
 
 3. Node.js version:
@@ -283,7 +295,7 @@ When reporting issues, include:
 
 5. Configuration (redact tokens):
    ```bash
-   cat .claude/review-config.yml
+   cat .sissy/review-config.yml
    ```
 
 ### Report a Bug
@@ -314,7 +326,9 @@ A: Not yet. GitHub support is planned for a future release.
 A: Not in the current version. Custom agents are planned.
 
 **Q: How do I update the plugin?**
-A: Run `claude plugins update sissy-code-review-squad`
+A: In Claude Code, run `claude plugins update sissy-code-review-squad`. In
+Codex, upgrade the configured marketplace, reinstall the plugin, and restart
+Codex.
 
 **Q: Can I use this in CI/CD?**
 A: The plugin is designed for manual invocation. CI/CD integration is a future goal.

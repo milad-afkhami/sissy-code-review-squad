@@ -19,5 +19,20 @@
     "react",
     "typescript"
   ],
-  "commands": "./commands/"
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Sissy Code Review Squad",
+    "shortDescription": "Review GitLab merge requests with a specialized agent squad.",
+    "longDescription": "Run the canonical Sissy initial and follow-up GitLab merge request review workflows from Codex CLI.",
+    "developerName": "Milad Afkhami",
+    "category": "Productivity",
+    "capabilities": [
+      "Review GitLab merge requests",
+      "Verify fixes in review threads"
+    ],
+    "defaultPrompt": [
+      "$sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123",
+      "$follow-up-review https://gitlab.com/your-org/your-project/-/merge_requests/123"
+    ]
+  }
 }

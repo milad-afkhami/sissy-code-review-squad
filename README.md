@@ -1,6 +1,6 @@
 # Sissy Code Review Squad
 
-A multi-agent code review plugin for Claude Code that reviews GitLab merge requests across 10 specialized domains.
+A multi-agent code review plugin for Claude Code and Codex CLI that reviews GitLab merge requests across 10 specialized domains.
 
 ## The Squad
 
@@ -19,28 +19,49 @@ A multi-agent code review plugin for Claude Code that reviews GitLab merge reque
 
 ## Installation
 
+### Claude Code
+
 ```bash
 claude plugins install sissy-code-review-squad
 ```
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v2.4.0
+codex plugin add sissy-code-review-squad@sissy-code-review-squad
+```
+
+Restart Codex after installation so it discovers the new skills.
 
 ## Quick Start
 
 1. **Install the plugin** (see above)
 
-2. **Run a review** on any GitLab MR:
-   ```
+2. **Run a review** on any GitLab MR from either runtime:
+
+   Claude Code:
+
+   ```text
    /sissy-code-review-squad:sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123
    ```
 
+   Codex CLI:
+
+   ```text
+   $sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/123
+   ```
+
 On each run, a zenity dialog asks which agents to enable (saved to
-`.claude/review-config.yml`). The squad then reviews the MR in an **isolated git
+`.sissy/review-config.yml`). The squad then reviews the MR in an **isolated git
 worktree** — your working tree, including uncommitted changes, is never touched —
 and posts comments directly to GitLab.
 
 When the developer replies to the threads, run the follow-up to verify the fixes:
 
-```
+```text
 /sissy-code-review-squad:follow-up-review https://gitlab.com/your-org/your-project/-/merge_requests/123
+$follow-up-review https://gitlab.com/your-org/your-project/-/merge_requests/123
 ```
 
 Both commands are self-contained: they provision the worktree from the MR's own
@@ -49,7 +70,7 @@ source branch and remove it when done. There is no separate setup step.
 ## Configuration
 
 `sissy-squad` shows a zenity picker each run and writes your selection to
-`.claude/review-config.yml`. You can also edit that file directly to enable/disable
+`.sissy/review-config.yml`. You can also edit that file directly to enable/disable
 agents:
 
 ```yaml
@@ -75,6 +96,10 @@ agents:
   qa:
     enabled: true
 ```
+
+When upgrading, if the neutral file is absent and `.claude/review-config.yml`
+exists, the next `sissy-squad` run copies the legacy file unchanged to `.sissy/`.
+The legacy file is left untouched; future picker saves use only `.sissy/`.
 
 ## Comment Format
 
@@ -113,7 +138,7 @@ These files help the Discovery agent provide project-specific context to reviewe
 │     └── Extract project ID and MR IID from URL              │
 │                                                             │
 │  2. CONFIGURE AGENTS                                        │
-│     └── zenity picker → write .claude/review-config.yml     │
+│     └── zenity picker → write .sissy/review-config.yml      │
 │                                                             │
 │  3. FETCH MR DATA                                           │
 │     └── Get MR details + diffs (incl. source branch)        │
@@ -136,16 +161,19 @@ These files help the Discovery agent provide project-specific context to reviewe
 
 ## Prerequisites
 
-- **Claude Code CLI** (v1.0.0 or later)
+- **Claude Code CLI** (v1.0.0 or later) or **Codex CLI** with plugin support
 - **Git** (any version with worktree support — 2.5+)
 - **GitLab MCP Server** configured with access token
 - **GitLab Project** with merge requests
-- **zenity** — for the agent-selection dialog (`sudo apt install zenity`; if absent, the review falls back to your existing `.claude/review-config.yml`)
+- **zenity** — for the agent-selection dialog (`sudo apt install zenity`; if absent, the review falls back to your existing `.sissy/review-config.yml`)
 - **notify-send** (`libnotify`) — for the completion desktop notification (optional)
 
 ### GitLab MCP Setup
 
-Make sure you have the GitLab MCP server configured in your Claude Code settings:
+The plugin uses the GitLab MCP server already configured in the runtime; it does
+not install or own the server or its credentials. For Codex, verify the existing
+configuration with `codex mcp list`. For Claude Code, a configuration has this
+shape:
 
 ```json
 {
@@ -164,11 +192,13 @@ Make sure you have the GitLab MCP server configured in your Claude Code settings
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/sissy-code-review-squad:sissy-squad <MR_URL>` | Pick agents, provision a worktree, run the full review, clean up |
-| `/sissy-code-review-squad:follow-up-review <MR_URL>` | Verify developer fixes on addressed threads and resolve/reply |
-| `/sissy-code-review-squad:clear-mr-comments <MR_URL>` | Remove all Sissy discussions and notes from an MR |
+| Runtime | Command | Description |
+|---------|---------|-------------|
+| Claude Code | `/sissy-code-review-squad:sissy-squad <MR_URL>` | Pick agents, provision a worktree, run the full review, clean up |
+| Codex CLI | `$sissy-squad <MR_URL>` | Run the same canonical initial-review workflow |
+| Claude Code | `/sissy-code-review-squad:follow-up-review <MR_URL>` | Verify developer fixes on addressed threads and resolve/reply |
+| Codex CLI | `$follow-up-review <MR_URL>` | Run the same canonical follow-up workflow |
+| Claude Code only | `/sissy-code-review-squad:clear-mr-comments <MR_URL>` | Remove all Sissy discussions and notes from an MR |
 
 ## Example Output
 
@@ -211,8 +241,8 @@ After running the command, you'll see:
 - Check if the MR allows comments from your account
 
 ### Configuration not loading
-- Ensure `.claude/review-config.yml` is valid YAML
-- Check the file path is correct (`.claude/` not `claude/`)
+- Ensure `.sissy/review-config.yml` is valid YAML
+- Check the file path is exactly `.sissy/review-config.yml`
 
 ## Contributing
 

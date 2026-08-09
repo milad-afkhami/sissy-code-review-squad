@@ -18,7 +18,7 @@ Be respectful, inclusive, and constructive. We welcome contributors of all backg
 ### Prerequisites
 
 - Node.js 18+
-- Claude Code CLI installed
+- Claude Code CLI and/or Codex CLI installed
 - GitLab account with API access
 - A test GitLab project with merge requests
 
@@ -30,21 +30,30 @@ Be respectful, inclusive, and constructive. We welcome contributors of all backg
    cd sissy-code-review-squad
    ```
 
-2. Link the plugin locally:
+2. Link the plugin in Claude Code, or add the repository as a local Codex
+   marketplace:
+
    ```bash
    claude plugins link .
+   codex plugin marketplace add .
+   codex plugin add sissy-code-review-squad@sissy-code-review-squad
    ```
 
-3. Verify installation:
+3. Verify installation in the runtime you are testing:
+
    ```bash
    claude plugins list
-   # Should show: sissy-code-review-squad (linked)
+   codex plugin list --json
    ```
 
-4. Test with a real MR:
-   ```bash
-   claude
-   # Then: /sissy-squad https://gitlab.com/your-project/-/merge_requests/123
+4. Restart the runtime, then test with a disposable MR:
+
+   ```text
+   # Claude Code
+   /sissy-code-review-squad:sissy-squad https://gitlab.com/your-project/-/merge_requests/123
+
+   # Codex CLI
+   $sissy-squad https://gitlab.com/your-project/-/merge_requests/123
    ```
 
 ### Project Structure
@@ -62,7 +71,9 @@ sissy-code-review-squad/
 ├── config/             # Configuration schema and defaults
 ├── templates/          # User config templates
 ├── docs/               # Documentation
-└── .claude-plugin/     # Plugin manifest
+├── skills/             # Thin Codex skill entrypoints
+├── .claude-plugin/     # Claude plugin + shared marketplace metadata
+└── .codex-plugin/      # Codex manifest + runtime adapter
 ```
 
 ## Making Changes
@@ -109,7 +120,8 @@ $ARGUMENTS
 The main command is in `commands/sissy-squad.md`. This file:
 
 1. Parses MR URL using the parse-mr-metadata agent
-2. Reads configuration from `.claude/review-config.yml`
+2. Reads configuration from `.sissy/review-config.yml`, migrating the legacy
+   `.claude/review-config.yml` once when needed
 3. Fetches MR data from GitLab
 4. Runs architecture discovery
 5. Spawns enabled agents in parallel
@@ -117,7 +129,8 @@ The main command is in `commands/sissy-squad.md`. This file:
 
 ### Editing Rules
 
-Rules in `rules/` are auto-loaded by Claude Code. The main file is `code-review-standards.md` which defines:
+The canonical command loads `rules/code-review-standards.md` for both runtimes.
+It defines:
 
 - Comment prefixes (blocking, suggestion, nit, question)
 - SubAgent headers
@@ -129,9 +142,26 @@ Rules in `rules/` are auto-loaded by Claude Code. The main file is `code-review-
 
 ### Manual Testing
 
-1. Link your local version:
+Run the automated compatibility checks first:
+
+```bash
+python3 scripts/test_classify_discussions.py
+python3 -m unittest scripts.test_codex_compatibility -v
+python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+npm pack --dry-run --json
+```
+
+Do not modify files under `agents/`, `rules/code-review-standards.md`,
+`commands/follow-up-review.md`, or `commands/clear-mr-comments.md` for Codex
+adaptation. Codex mechanics belong in `.codex-plugin/runtime-adapter.md` and the
+thin skills.
+
+1. Link or install your local version in the runtime under test:
+
    ```bash
    claude plugins link /path/to/sissy-code-review-squad
+   codex plugin marketplace add /path/to/sissy-code-review-squad
+   codex plugin add sissy-code-review-squad@sissy-code-review-squad
    ```
 
 2. Create a test MR with intentional issues:
@@ -156,7 +186,7 @@ Rules in `rules/` are auto-loaded by Claude Code. The main file is `code-review-
 To test a single agent, temporarily disable others in config:
 
 ```yaml
-# .claude/review-config.yml
+# .sissy/review-config.yml
 agents:
   accessibility:
     enabled: true    # Only this one enabled
@@ -241,13 +271,9 @@ To add a new specialized agent:
 
 ## Release Process
 
-Maintainers only:
-
-1. Update version in `package.json`
-2. Update CHANGELOG.md
-3. Create git tag: `git tag v1.x.x`
-4. Push tag: `git push origin v1.x.x`
-5. Publish to npm: `npm publish`
+Maintainers must follow [RELEASE.md](RELEASE.md). It keeps the package, Claude
+plugin, marketplace, and Codex plugin versions synchronized, publishes the
+GitHub release, and verifies both local runtime installations.
 
 ## Getting Help
 

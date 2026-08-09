@@ -49,12 +49,26 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 
 ### Step 3: Configure Agents (Interactive)
 
-Pick which of the 10 agents run and save the choice to `.claude/review-config.yml`
+Pick which of the 10 agents run and save the choice to `.sissy/review-config.yml`
 in your **main repo** (not the worktree — this is your project preference, not
 branch code). Do this now, up front, so the rest of the review runs unattended.
 
-**3a. Read existing config.** Read `.claude/review-config.yml` from the current
-directory. Build a map of `agentKey → enabled` for all 10 keys
+**3a. Migrate and read existing config.** Before reading the config, run this
+one-way migration block:
+
+```bash
+REVIEW_CONFIG=".sissy/review-config.yml"
+LEGACY_REVIEW_CONFIG=".claude/review-config.yml"
+
+if [ ! -f "$REVIEW_CONFIG" ] && [ -f "$LEGACY_REVIEW_CONFIG" ]; then
+  mkdir -p .sissy &&
+    cp -- "$LEGACY_REVIEW_CONFIG" "$REVIEW_CONFIG" &&
+    echo "MIGRATED:$LEGACY_REVIEW_CONFIG->$REVIEW_CONFIG"
+fi
+```
+
+Read `.sissy/review-config.yml` from the current directory. Build a map of
+`agentKey → enabled` for all 10 keys
 (`accessibility`, `security`, `performance`, `seo`, `styling`, `code-quality`,
 `react`, `typescript`, `git`, `qa`). Any absent key — or a missing file — defaults
 to `true`.
@@ -85,7 +99,7 @@ Select agents to enable for this review:" \
 if [ $? -ne 0 ]; then
   echo "CANCELLED"
 else
-  mkdir -p .claude
+  mkdir -p .sissy
   {
     echo "# Sissy Code Review Squad Configuration"
     echo "# Written by /sissy-squad's agent picker. Edit here or re-run to change."
@@ -97,7 +111,7 @@ else
       esac
       printf '  %s:\n    enabled: %s\n' "$key" "$enabled"
     done
-  } > .claude/review-config.yml
+  } > .sissy/review-config.yml
   echo "SAVED:$SELECTED_AGENTS"
 fi
 ```
@@ -394,7 +408,7 @@ Run this even if earlier steps (Steps 6–9) reported issues, so no worktree is 
 2. **PARSE MR METADATA** → Task(parse-mr-metadata)
    - Output: `{project_id, mr_iid, project_path}` JSON
 
-3. **CONFIGURE AGENTS** → zenity picker → write `.claude/review-config.yml` (bash) → `{enabled_agents}`
+3. **CONFIGURE AGENTS** → migrate/read `.sissy/review-config.yml` → zenity picker → write `.sissy/review-config.yml` (bash) → `{enabled_agents}`
 
 4. **FETCH MR DATA** → Task(fetch-mr-diffs) → includes `source_branch`
 
@@ -416,7 +430,7 @@ Run this even if earlier steps (Steps 6–9) reported issues, so no worktree is 
 
 1. **Self-contained**: There is no `sissy-setup`. This command handles config, worktree provisioning, review, and cleanup in one run.
 2. **Isolation**: The review reads a detached worktree mirroring `origin/<source_branch>`. Your main working tree — including uncommitted, unstaged changes — is never touched.
-3. **Config location**: `.claude/review-config.yml` is read and written in your **main repo**, not the worktree. It is your per-project preference, independent of the branch.
+3. **Config location**: `.sissy/review-config.yml` is read and written in your **main repo**, not the worktree. If it is absent, an existing `.claude/review-config.yml` is copied there once and left untouched. It is your per-project preference, independent of the branch.
 4. **Deterministic config write**: The picker writes the YAML with a bash heredoc/loop, not the Write tool, so the save cannot silently fail.
 5. **Concurrent reviews are safe**: each run uses a uniquely-named worktree and removes only its own, so multiple reviews can run against the same repo at once.
 6. **MR Metadata Parser**: MUST complete before fetch (needs project_id and mr_iid).
@@ -435,6 +449,6 @@ For best results, users should have these files in their project:
 - `.claude/rules/services-guideline.md` - Service layer patterns
 - `.claude/rules/data-flow.md` - Data architecture
 
-`.claude/review-config.yml` is created and maintained by this command's agent
+`.sissy/review-config.yml` is created and maintained by this command's agent
 picker — you don't need to create it by hand. If these rule files don't exist,
 agents will still work but provide more generic feedback.

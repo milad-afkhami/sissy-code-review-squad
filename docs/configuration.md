@@ -4,14 +4,19 @@ Customize the Sissy Code Review Squad to match your project's needs.
 
 ## Configuration File
 
-Create `.claude/review-config.yml` in your project root. This file controls which agents run and their behavior.
+Create `.sissy/review-config.yml` in your project root. This runtime-neutral file controls which agents run and their behavior in Claude Code and Codex CLI.
+
+When upgrading, if `.sissy/review-config.yml` is absent and
+`.claude/review-config.yml` exists, `sissy-squad` copies the legacy file
+unchanged to the neutral path. It never deletes or overwrites the legacy file,
+and future picker saves write only `.sissy/review-config.yml`.
 
 ## Schema Reference
 
 ### Full Configuration Example
 
 ```yaml
-# .claude/review-config.yml
+# .sissy/review-config.yml
 agents:
   accessibility:
     enabled: true

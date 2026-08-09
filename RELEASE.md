@@ -1,228 +1,189 @@
 # Release Guide
 
-This document describes the exact process for releasing a new version of the Sissy Code Review Squad plugin.
+This is the release process for Sissy Code Review Squad across Claude Code and
+Codex CLI.
 
 ## Prerequisites
 
-- All changes are committed and tested
-- You have write access to the repository
-- Git is configured with your credentials
+- You have write access to the GitHub repository.
+- Git and GitHub CLI authentication are configured.
+- The intended release changes are complete and locally verified.
+- No commit has been created before the repository-required complete-diff
+  approval gate.
 
-## Version Files to Update
+## Version Files
 
-The plugin version is stored in **3 files** that must be kept in sync:
+Keep the version synchronized in all four files:
 
-1. `package.json` - Root package file
-2. `.claude-plugin/plugin.json` - Claude Code plugin metadata
-3. `.claude-plugin/marketplace.json` - Marketplace listing metadata
+1. `package.json`
+2. `.claude-plugin/plugin.json`
+3. `.claude-plugin/marketplace.json`
+4. `.codex-plugin/plugin.json`
+
+Use semantic versioning: patch for compatible fixes, minor for compatible
+features, and major for breaking changes.
 
 ## Release Process
 
-### Step 1: Decide Version Number
+### 1. Update All Four Versions
 
-Follow [Semantic Versioning](https://semver.org/):
-
-- **Patch** (x.y.Z) - Bug fixes, small improvements
-- **Minor** (x.Y.0) - New features, backward compatible
-- **Major** (X.0.0) - Breaking changes
-
-### Step 2: Update All Version Files
-
-**CRITICAL:** Update the version in ALL THREE files to the same value.
+Change only the `version` value in each version file, then verify equality:
 
 ```bash
-# 1. Update package.json
-# Change: "version": "<old>" → "version": "<new>"
+python3 - <<'PY'
+import json
+from pathlib import Path
 
-# 2. Update .claude-plugin/plugin.json
-# Change: "version": "<old>" → "version": "<new>"
-
-# 3. Update .claude-plugin/marketplace.json
-# Change: "version": "<old>" → "version": "<new>"
+paths = (
+    Path("package.json"),
+    Path(".claude-plugin/plugin.json"),
+    Path(".claude-plugin/marketplace.json"),
+    Path(".codex-plugin/plugin.json"),
+)
+versions = {str(path): json.loads(path.read_text())["version"] for path in paths}
+print(versions)
+if len(set(versions.values())) != 1:
+    raise SystemExit("version mismatch")
+PY
 ```
 
-### Step 3: Commit Version Bump
+### 2. Run Release Verification
 
 ```bash
-git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
-git commit -m "chore: bump version to <new-version>"
+python3 scripts/test_classify_discussions.py
+python3 -m unittest scripts.test_codex_compatibility -v
+python3 -m py_compile scripts/classify_discussions.py scripts/test_classify_discussions.py scripts/test_codex_compatibility.py
+python3 -m json.tool package.json >/dev/null
+python3 -m json.tool .claude-plugin/plugin.json >/dev/null
+python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
+python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+npm pack --dry-run --json
+git diff --check
 ```
 
-### Step 4: Create Git Tag
+Confirm the npm file list contains the Codex manifest, runtime adapter, both
+Codex skills, and all canonical command, agent, and rule files.
+
+### 3. Show the Complete Diff and Get Approval
+
+Show `git status --short`, the complete tracked and untracked release diff, and
+the verification results. Wait for explicit approval before staging or
+committing. If anything changes after approval, show the new complete diff and
+obtain approval again.
+
+### 4. Commit the Approved Release
+
+Stage only the approved files and inspect the staged diff:
 
 ```bash
-# Create annotated tag with version
-git tag -a v<new-version> -m "Release v<new-version>"
-
-# Verify tag was created
-git tag -l "v<new-version>"
+git add <approved-release-files>
+git diff --cached --check
+git diff --cached
+git commit -m "<approved-release-commit-message>"
 ```
 
-### Step 5: Push to Remote
+### 5. Create and Verify the Annotated Tag
 
 ```bash
-# Push commits
+git tag -a "v<new-version>" -m "Release v<new-version>"
+git tag -n99 -l "v<new-version>"
+```
+
+### 6. Push Main and the Tag
+
+```bash
 git push origin main
-
-# Push tags
-git push origin v<new-version>
+git push origin "v<new-version>"
 ```
 
-### Step 6: Create GitHub Release
+### 7. Publish the GitHub Release
 
-Use the `gh` CLI to create the release directly (no browser needed):
+Write release notes to a Markdown file and publish them without shell-embedded
+multiline text:
 
 ```bash
-gh release create v<new-version> --title "v<new-version>" --notes "## What's Changed
-
-### ✨ Features
-- ...
-
-**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v<prev-version>...v<new-version>"
+gh release create "v<new-version>" \
+  --title "v<new-version>" \
+  --notes-file "/absolute/path/to/release-notes.md"
+gh release view "v<new-version>"
 ```
 
-The release will appear immediately on the GitHub releases page.
+Release notes should describe user-visible features, configuration migrations,
+compatibility, and the full changelog link.
 
-### Step 7: Update Local Plugin
+### 8. Update Claude Code Locally
 
-After the GitHub release is published, update the plugin in your Claude Code instance:
+Use the command spelling supported by the installed Claude CLI:
 
 ```bash
 claude plugin update sissy-code-review-squad@sissy-code-review-squad
 ```
 
-Then **reload your Claude Code window** for the new commands to take effect.
+If the local CLI uses `plugins` rather than `plugin`, follow `claude --help`.
+
+### 9. Install the Released Codex Plugin
+
+For the first install, add the released repository tag as a marketplace and
+install the plugin:
+
+```bash
+codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref "v<new-version>" --json
+codex plugin add sissy-code-review-squad@sissy-code-review-squad --json
+```
+
+If the marketplace already exists, inspect it and use the supported marketplace
+upgrade flow rather than adding a duplicate:
+
+```bash
+codex plugin marketplace list --json
+codex plugin marketplace upgrade sissy-code-review-squad --json
+codex plugin add sissy-code-review-squad@sissy-code-review-squad --json
+```
+
+### 10. Verify Local State and Restart
+
+```bash
+codex plugin marketplace list --json
+codex plugin list --json
+```
+
+Confirm the released version is installed and enabled, the cached manifest is
+valid, `$sissy-squad` and `$follow-up-review` exist, and no Codex
+`$clear-mr-comments` skill exists. Restart Claude Code after its update and
+restart Codex after its install so each runtime discovers the release.
 
 ## Release Notes Template
 
 ```markdown
 ## What's Changed
 
-### 🐛 Bug Fixes
+### Features
 - ...
 
-### ✨ Features
+### Configuration
 - ...
 
-### 📝 Documentation
+### Compatibility
 - ...
 
-### 🔧 Internal
-- ...
-
-**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v<prev-version>...v<new-version>
+**Full Changelog**: https://github.com/milad-afkhami/sissy-code-review-squad/compare/v<previous-version>...v<new-version>
 ```
 
 ## Verification Checklist
 
-After releasing, verify:
+- [ ] All four version files match.
+- [ ] Automated tests, JSON validation, package dry run, and diff check pass.
+- [ ] The complete diff was explicitly approved before commit.
+- [ ] The annotated tag exists locally and on GitHub.
+- [ ] The GitHub release is published with the intended notes.
+- [ ] The local Claude plugin update completed.
+- [ ] The Codex marketplace points to the released tag.
+- [ ] The Codex plugin is installed and enabled.
+- [ ] The affected runtime was restarted and exposes the expected commands or skills.
 
-- [ ] All three version files show the same version number
-- [ ] Git tag exists: `git tag -l`
-- [ ] Tag is pushed to GitHub: Check tags page on GitHub
-- [ ] GitHub release is published: `gh release view v<new-version>`
-- [ ] Local plugin updated: `claude plugin update sissy-code-review-squad@sissy-code-review-squad`
-- [ ] Claude Code window reloaded — new commands available
+## Rollback
 
-## Rollback Procedure
-
-If something goes wrong:
-
-```bash
-# Delete local tag
-git tag -d v<new-version>
-
-# Delete remote tag
-git push origin :refs/tags/v<new-version>
-
-# Revert version bump commit
-git revert HEAD
-
-# Push revert
-git push origin main
-```
-
-## Common Mistakes to Avoid
-
-1. ❌ **Forgetting to update all 3 version files** - This causes version mismatch
-2. ❌ **Not creating a git tag** - Releases should always be tagged
-3. ❌ **Not pushing tags separately** - Tags require `git push origin <tag>`
-4. ❌ **Typo in version numbers** - Double-check all version strings match exactly
-5. ❌ **Skipping the GitHub release** - Users need release notes to understand changes
-
-## Quick Release Script
-
-For convenience, you can use this script to automate the process:
-
-```bash
-#!/bin/bash
-# release.sh - Automated release script
-
-set -e  # Exit on error
-
-# Check if version is provided
-if [ -z "$1" ]; then
-  echo "Usage: ./release.sh <version>"
-  echo "Example: ./release.sh 1.2.0"
-  exit 1
-fi
-
-VERSION=$1
-TAG="v$VERSION"
-PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-PREV_VERSION=${PREV_TAG#v}
-
-echo "🚀 Releasing version $VERSION..."
-
-# Update version in all files
-echo "📝 Updating version files..."
-sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
-sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/plugin.json
-sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/marketplace.json
-
-# Commit changes
-echo "💾 Committing version bump..."
-git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
-git commit -m "chore: bump version to $VERSION"
-
-# Create tag
-echo "🏷️  Creating tag $TAG..."
-git tag -a "$TAG" -m "Release $TAG"
-
-# Push everything
-echo "⬆️  Pushing to remote..."
-git push origin main
-git push origin "$TAG"
-
-# Create GitHub release
-echo "📦 Creating GitHub release..."
-CHANGELOG_URL="https://github.com/milad-afkhami/sissy-code-review-squad/compare/${PREV_TAG}...${TAG}"
-gh release create "$TAG" --title "$TAG" --notes "## What's Changed
-
-**Full Changelog**: $CHANGELOG_URL"
-
-# Update local plugin
-echo "🔌 Updating local plugin..."
-claude plugin update sissy-code-review-squad@sissy-code-review-squad
-
-echo "✅ Release $VERSION complete! Reload your Claude Code window."
-```
-
-Usage:
-```bash
-chmod +x release.sh
-./release.sh 1.2.0
-```
-
-## Post-Release
-
-After releasing:
-
-1. Update the [README.md](README.md) if there are new features to document
-2. Announce the release (if applicable)
-3. Monitor for any issues reported by users
-4. Start planning the next release
-
-## Questions?
-
-If you have questions about the release process, open an issue or refer to the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
+Do not delete a published release or remote tag as a routine recovery step. Those
+actions affect other users and require explicit approval after confirming the
+exact tag and release. Prefer a forward fix or a reviewed revert release when
+the published artifact has already been consumed.
