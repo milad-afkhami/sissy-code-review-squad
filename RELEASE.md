@@ -57,12 +57,17 @@ python3 -m json.tool package.json >/dev/null
 python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
+claude --plugin-dir ./claude-plugin plugin details sissy-code-review-squad
 npm pack --dry-run --json
 git diff --check
 ```
 
-Confirm the npm file list contains the Codex manifest, runtime adapter, both
-Codex skills, and all canonical command, agent, and rule files.
+Confirm Claude reports exactly three skills (`clear-mr-comments`,
+`follow-up-review`, and `sissy-squad`) with no duplicate names. Confirm the npm
+file list contains the canonical Claude command, agent, and rule files while
+excluding `.codex-plugin/` and `skills/`; Codex is distributed from the Git
+marketplace rather than the Claude-oriented npm artifact.
 
 ### 3. Show the Complete Diff and Get Approval
 
@@ -117,9 +122,12 @@ Use the command spelling supported by the installed Claude CLI:
 
 ```bash
 claude plugin update sissy-code-review-squad@sissy-code-review-squad
+claude plugin details sissy-code-review-squad@sissy-code-review-squad
 ```
 
 If the local CLI uses `plugins` rather than `plugin`, follow `claude --help`.
+The details output must list exactly the three canonical Claude commands, with
+no duplicate `sissy-squad` or `follow-up-review` entry.
 
 ### 9. Install the Released Codex Plugin
 

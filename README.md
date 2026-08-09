@@ -28,7 +28,7 @@ claude plugins install sissy-code-review-squad
 ### Codex CLI
 
 ```bash
-codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v2.4.0
+codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v2.4.1
 codex plugin add sissy-code-review-squad@sissy-code-review-squad
 ```
 

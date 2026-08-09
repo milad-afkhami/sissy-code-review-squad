@@ -30,11 +30,12 @@ Be respectful, inclusive, and constructive. We welcome contributors of all backg
    cd sissy-code-review-squad
    ```
 
-2. Link the plugin in Claude Code, or add the repository as a local Codex
-   marketplace:
+2. Add the repository to each runtime's local marketplace and install the
+   runtime-specific projection:
 
    ```bash
-   claude plugins link .
+   claude plugin marketplace add .
+   claude plugin install sissy-code-review-squad@sissy-code-review-squad
    codex plugin marketplace add .
    codex plugin add sissy-code-review-squad@sissy-code-review-squad
    ```
@@ -72,7 +73,9 @@ sissy-code-review-squad/
 ├── templates/          # User config templates
 ├── docs/               # Documentation
 ├── skills/             # Thin Codex skill entrypoints
-├── .claude-plugin/     # Claude plugin + shared marketplace metadata
+├── .agents/plugins/    # Codex-native marketplace catalog
+├── claude-plugin/      # Symlink-only Claude marketplace projection
+├── .claude-plugin/     # Claude manifest + legacy marketplace catalog
 └── .codex-plugin/      # Codex manifest + runtime adapter
 ```
 
@@ -148,6 +151,8 @@ Run the automated compatibility checks first:
 python3 scripts/test_classify_discussions.py
 python3 -m unittest scripts.test_codex_compatibility -v
 python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
+claude --plugin-dir ./claude-plugin plugin details sissy-code-review-squad
 npm pack --dry-run --json
 ```
 
@@ -159,7 +164,8 @@ thin skills.
 1. Link or install your local version in the runtime under test:
 
    ```bash
-   claude plugins link /path/to/sissy-code-review-squad
+   claude plugin marketplace add /path/to/sissy-code-review-squad
+   claude plugin install sissy-code-review-squad@sissy-code-review-squad
    codex plugin marketplace add /path/to/sissy-code-review-squad
    codex plugin add sissy-code-review-squad@sissy-code-review-squad
    ```

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Release Sissy Code Review Squad 2.4.0 with Claude Code behavior preserved and two Codex CLI skills that run the same canonical initial-review and follow-up-review workflows through the user's configured GitLab MCP server.
+**Goal:** Release Sissy Code Review Squad 2.4.1 with Claude Code behavior preserved and two Codex CLI skills that run the same canonical initial-review and follow-up-review workflows through the user's configured GitLab MCP server. Tasks 1–11 produced v2.4.0; Tasks 12–16 are the forward patch for the runtime-discovery conflict found during local installation.
 
 **Architecture:** Keep the existing Claude command, agent, and standards files in place as the canonical workflow sources. Add a skills-only Codex plugin whose two thin entrypoints load a shared runtime adapter and then execute the matching canonical command. The adapter translates host mechanics—arguments, plugin-root resolution, subagents, models, and MCP tool names—without copying or rewriting reviewer prompts. Move only the project review configuration to the runtime-neutral `.sissy/` path, with one-way migration from `.claude/`.
 
@@ -18,7 +18,8 @@
 - Fail Codex preflight before worktree creation or GitLab content writes when required MCP operations or explicitly mapped models are unavailable.
 - Preserve canonical ordering: parse before fetch, discovery before reviews, enabled reviewers in parallel, follow-up evaluator buckets in parallel, verdict writes serially, cleanup after any created worktree.
 - Keep `.claude/review-config.yml` as read-only legacy input. New and migrated settings live at `.sissy/review-config.yml`.
-- Release all four manifests at exactly `2.4.0`.
+- Keep all four release manifests synchronized. Tasks 1–11 used `2.4.0`;
+  the final forward patch uses `2.4.1`.
 - Do not make intermediate commits. Repository instructions require showing the complete diff and receiving explicit approval before every commit. Make one release commit only after that gate.
 - Do not run a live MR smoke test without a disposable MR URL because both workflows write to GitLab.
 
@@ -41,7 +42,11 @@
 - `templates/review-config.yml` — neutral destination comment.
 - `package.json` — publish Codex files and release version.
 - `.claude-plugin/plugin.json` — release version only.
-- `.claude-plugin/marketplace.json` — release version only; remains the marketplace catalog used by both runtimes.
+- `.claude-plugin/marketplace.json` — Claude's legacy-compatible catalog,
+  routed to the nested Claude projection in v2.4.1.
+- `.agents/plugins/marketplace.json` — Codex-native catalog routed to the
+  repository-root Codex plugin.
+- `claude-plugin/` — symlink-only projection of canonical Claude components.
 - `README.md` — dual-runtime positioning, install, invocation, configuration, and prerequisites.
 - `CONTRIBUTING.md` — dual-runtime development and verification.
 - `docs/installation.md` — separate Claude Code and Codex CLI installation paths.
@@ -1168,3 +1173,95 @@ Expected: version `2.4.0`, installed `true`, enabled `true`, exactly the two app
 Report the published release, local Claude update result, Codex marketplace/plugin enabled state, and installed cache verification. Then ask the user to restart Codex so the newly installed skills are discovered. Do not claim the skills are visible in the current session before that restart.
 
 The only intentionally unrun check may be a live GitLab MR smoke test when no disposable MR URL was supplied; state that clearly.
+
+---
+
+## v2.4.1 Forward Patch: Separate Runtime Discovery
+
+Version 2.4.0 was committed, tagged, pushed, published, and installed into
+Claude. Claude's component inventory then revealed five skills: its three
+canonical commands plus duplicate Codex wrappers for `sissy-squad` and
+`follow-up-review`. Do not rewrite or delete the published tag. Complete the
+following patch release instead.
+
+### Task 12: Reproduce and isolate the discovery conflict
+
+**Files:** Verify only.
+
+- [x] Run `claude --plugin-dir . plugin details sissy-code-review-squad` and
+  confirm it reports five skills.
+- [x] Confirm Claude always adds the root `skills/` directory while Codex's
+  plugin validator requires `skills/` at its plugin root.
+- [x] Test a nested Claude projection and a Codex-native marketplace in
+  temporary local installations.
+- [x] Confirm both caches materialize the protected canonical prompts with the
+  v2.3.0 SHA-256 values and expose only the intended runtime entrypoints.
+
+### Task 13: Add the split-marketplace regression tests
+
+**Files:**
+
+- Modify: `scripts/test_codex_compatibility.py`
+
+- [x] Add a real Claude CLI inventory test for exactly the three canonical
+  Claude commands.
+- [x] Add catalog-routing tests for `.agents/plugins/marketplace.json` and the
+  nested Claude projection.
+- [x] Add symlink-integrity tests for the Claude projection.
+- [x] Change the npm contract to require canonical Claude files and reject
+  `.codex-plugin/` and `skills/` from the npm artifact.
+- [x] Run the new tests before implementation and observe the expected
+  duplicate-inventory, missing-catalog, missing-symlink, and package failures.
+
+### Task 14: Implement and verify the v2.4.1 projection
+
+**Files:**
+
+- Create: `.agents/plugins/marketplace.json`
+- Create: `claude-plugin/.claude-plugin/plugin.json` symlink
+- Create: `claude-plugin/commands` symlink
+- Create: `claude-plugin/agents` symlink
+- Create: `claude-plugin/rules` symlink
+- Create: `claude-plugin/scripts` symlink
+- Create: `claude-plugin/package.json` symlink
+- Modify: `.claude-plugin/marketplace.json`
+- Modify: `package.json`
+- Modify: `.claude-plugin/plugin.json`
+- Modify: `.codex-plugin/plugin.json`
+- Modify: `README.md`
+- Modify: `CONTRIBUTING.md`
+- Modify: `docs/installation.md`
+- Modify: `RELEASE.md`
+- Modify: this plan and its design spec
+
+- [x] Route Codex's native catalog to `./` and Claude's legacy catalog to
+  `./claude-plugin`.
+- [x] Create only relative symlinks in the Claude projection; do not copy or
+  edit canonical prompt bodies.
+- [x] Keep the npm artifact Claude-only by removing `.codex-plugin/` and
+  `skills/` from `package.json`'s file list.
+- [x] Set all four release versions to `2.4.1`.
+- [x] Run the full Python suites, JSON and syntax checks, official plugin and
+  skill validators, Claude inventory, npm dry run, protected hashes, and diff
+  checks.
+
+### Task 15: Obtain approval for the v2.4.1 diff
+
+- [ ] Generate a complete tracked and untracked diff against v2.4.0.
+- [ ] Confirm no protected prompt body changed and every new projection entry
+  is a symlink.
+- [ ] Present the complete diff and fresh verification results.
+- [ ] Obtain explicit approval before staging or committing the forward patch.
+
+### Task 16: Publish and install v2.4.1
+
+- [ ] Commit with `fix: isolate Claude and Codex plugin discovery`.
+- [ ] Create and push annotated tag `v2.4.1` without changing v2.4.0.
+- [ ] Publish GitHub release v2.4.1 with a changelog link from v2.4.0.
+- [ ] Refresh and update the installed Claude plugin; verify exactly three
+  canonical commands in its component inventory.
+- [ ] Add the v2.4.1 repository tag as the Codex marketplace and install
+  `sissy-code-review-squad@sissy-code-review-squad`.
+- [ ] Verify Codex version 2.4.1 is installed and enabled, both Codex skills are
+  cached, `clear-mr-comments` is absent, and protected prompt hashes match.
+- [ ] Stop only when restarting Codex is the sole remaining user action.

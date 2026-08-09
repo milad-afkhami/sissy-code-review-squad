@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -60,13 +61,79 @@ class CodexCompatibilityTests(unittest.TestCase):
     def test_codex_manifest_declares_skills_plugin(self) -> None:
         manifest = json.loads(read_text(".codex-plugin/plugin.json"))
         self.assertEqual("sissy-code-review-squad", manifest["name"])
-        self.assertEqual("2.4.0", manifest["version"])
+        self.assertEqual("2.4.1", manifest["version"])
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual(
             "Sissy Code Review Squad",
             manifest["interface"]["displayName"],
         )
         self.assertEqual("Productivity", manifest["interface"]["category"])
+
+    def test_codex_native_marketplace_routes_to_root_plugin(self) -> None:
+        catalog_path = ROOT / ".agents/plugins/marketplace.json"
+        self.assertTrue(catalog_path.is_file(), "missing Codex-native marketplace")
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        plugin = next(
+            item
+            for item in catalog["plugins"]
+            if item["name"] == "sissy-code-review-squad"
+        )
+        self.assertEqual(
+            {"source": "local", "path": "./"},
+            plugin["source"],
+        )
+
+    def test_claude_marketplace_routes_to_projection(self) -> None:
+        catalog = json.loads(read_text(".claude-plugin/marketplace.json"))
+        plugin = next(
+            item
+            for item in catalog["plugins"]
+            if item["name"] == "sissy-code-review-squad"
+        )
+        self.assertEqual("./claude-plugin", plugin["source"])
+
+    def test_claude_projection_symlinks_to_canonical_sources(self) -> None:
+        expected = {
+            "claude-plugin/.claude-plugin/plugin.json": ".claude-plugin/plugin.json",
+            "claude-plugin/commands": "commands",
+            "claude-plugin/agents": "agents",
+            "claude-plugin/rules": "rules",
+            "claude-plugin/scripts": "scripts",
+            "claude-plugin/package.json": "package.json",
+        }
+        for projection, canonical in expected.items():
+            with self.subTest(path=projection):
+                path = ROOT / projection
+                self.assertTrue(path.is_symlink(), f"not a symlink: {projection}")
+                self.assertEqual((ROOT / canonical).resolve(), path.resolve())
+
+    @unittest.skipUnless(shutil.which("claude"), "Claude CLI is not installed")
+    def test_claude_projection_exposes_only_canonical_commands(self) -> None:
+        completed = subprocess.run(
+            [
+                "claude",
+                "--plugin-dir",
+                str(ROOT / "claude-plugin"),
+                "plugin",
+                "details",
+                "sissy-code-review-squad",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr or completed.stdout)
+        inventory = re.search(
+            r"(?m)^  Skills \((\d+)\)\s+(.+)$",
+            completed.stdout,
+        )
+        self.assertIsNotNone(inventory, completed.stdout)
+        assert inventory is not None
+        self.assertEqual("3", inventory.group(1))
+        self.assertEqual(
+            ["clear-mr-comments", "follow-up-review", "sissy-squad"],
+            inventory.group(2).split(", "),
+        )
 
     def test_sissy_skill_references_canonical_sources(self) -> None:
         body = read_text("skills/sissy-squad/SKILL.md")
@@ -227,7 +294,7 @@ class CodexCompatibilityTests(unittest.TestCase):
         self.assertIn(".sissy/review-config.yml", body)
         self.assertNotIn(".claude/review-config.yml", body)
 
-    def test_npm_package_contains_codex_runtime_files(self) -> None:
+    def test_npm_package_contains_claude_runtime_files(self) -> None:
         completed = subprocess.run(
             ["npm", "pack", "--dry-run", "--json"],
             cwd=ROOT,
@@ -238,10 +305,11 @@ class CodexCompatibilityTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
         packaged = {entry["path"] for entry in payload[0]["files"]}
         required = {
-            ".codex-plugin/plugin.json",
-            ".codex-plugin/runtime-adapter.md",
-            "skills/sissy-squad/SKILL.md",
-            "skills/follow-up-review/SKILL.md",
+            "commands/sissy-squad.md",
+            "commands/follow-up-review.md",
+            "commands/clear-mr-comments.md",
+            "agents/security.md",
+            "rules/code-review-standards.md",
         }
         self.assertLessEqual(required, packaged)
         cache_artifacts = {
@@ -250,6 +318,23 @@ class CodexCompatibilityTests(unittest.TestCase):
             if "__pycache__" in Path(path).parts or path.endswith((".pyc", ".pyo"))
         }
         self.assertEqual(set(), cache_artifacts)
+
+    def test_npm_package_excludes_codex_host_files_from_claude_artifact(self) -> None:
+        completed = subprocess.run(
+            ["npm", "pack", "--dry-run", "--json"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(completed.stdout)
+        packaged = {entry["path"] for entry in payload[0]["files"]}
+        codex_host_files = {
+            path
+            for path in packaged
+            if path.startswith(".codex-plugin/") or path.startswith("skills/")
+        }
+        self.assertEqual(set(), codex_host_files)
 
     def test_release_guide_covers_four_versions_and_codex_install(self) -> None:
         body = read_text("RELEASE.md")
@@ -276,7 +361,7 @@ class CodexCompatibilityTests(unittest.TestCase):
             path: json.loads(read_text(path))["version"]
             for path in paths
         }
-        self.assertEqual({"2.4.0"}, set(versions.values()), versions)
+        self.assertEqual({"2.4.1"}, set(versions.values()), versions)
 
 
 if __name__ == "__main__":

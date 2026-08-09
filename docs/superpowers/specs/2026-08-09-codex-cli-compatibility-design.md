@@ -1,7 +1,7 @@
 # Codex CLI Compatibility Design
 
 **Status:** Approved
-**Target release:** 2.4.0
+**Target release:** 2.4.1
 **Approved scope:** Claude Code plus Codex CLI, with shared review behavior
 
 ## Goal
@@ -98,6 +98,27 @@ command completely, and executes it with the user's MR URL.
 
 The skills must not embed copies of command, agent, or standards bodies.
 
+### Runtime-specific marketplace routing
+
+The first published implementation, v2.4.0, exposed the repository root to
+both runtimes. Claude automatically scans a root `skills/` directory in
+addition to `commands/`, so it registered duplicate `sissy-squad` and
+`follow-up-review` entries. Claude has no exclusion setting for its default
+skills directory, while Codex requires that directory at the plugin root.
+
+Version 2.4.1 separates installation roots without copying prompts:
+
+- `.agents/plugins/marketplace.json` is the Codex-native catalog and points to
+  the repository root, where `.codex-plugin/` and `skills/` remain valid.
+- `.claude-plugin/marketplace.json` points Claude to `./claude-plugin`.
+- `claude-plugin/` contains only relative symlinks to the canonical root
+  manifest, commands, agents, rules, scripts, and package metadata.
+
+Claude dereferences those same-marketplace symlinks when caching the nested
+plugin. Codex caches the repository root directly. The repository therefore
+keeps exactly one copy of every canonical prompt while each runtime discovers
+only its intended entrypoints.
+
 ## Runtime Translation
 
 The shared adapter defines these mappings:
@@ -185,6 +206,8 @@ Headless Codex runs use the command's existing fallback behavior.
 
 ### Create
 
+- `.agents/plugins/marketplace.json`
+- `claude-plugin/` symlink-only Claude projection
 - `.codex-plugin/plugin.json`
 - `skills/sissy-squad/SKILL.md`
 - `skills/follow-up-review/SKILL.md`
@@ -198,11 +221,11 @@ Headless Codex runs use the command's existing fallback behavior.
 
 - `commands/sissy-squad.md`: neutral config path and migration only.
 - `templates/review-config.yml`: neutral path in comments.
-- `package.json`: include Codex plugin files in the published package and bump
-  the release version.
+- `package.json`: keep the npm artifact Claude-only by excluding Codex host
+  files, and bump the release version.
 - `.claude-plugin/plugin.json`: release version only.
-- `.claude-plugin/marketplace.json`: release version only; it also remains the
-  marketplace catalog Codex can consume.
+- `.claude-plugin/marketplace.json`: release version plus the nested Claude
+  projection source.
 - `README.md`, `CONTRIBUTING.md`, `docs/installation.md`,
   `docs/configuration.md`, and `docs/troubleshooting.md`: dual-runtime usage,
   prerequisites, config path, install, and troubleshooting.
@@ -232,6 +255,10 @@ The test verifies:
 - no skill or adapter contains a copied reviewer prompt body;
 - every referenced path exists;
 - all four release-version locations match.
+- the Codex-native marketplace routes to the repository root;
+- the Claude marketplace routes to the symlink-only projection;
+- real Claude CLI inventory reports exactly the three canonical commands,
+  without duplicate Codex wrappers.
 
 ### Config migration checks
 
@@ -254,13 +281,16 @@ Run the new compatibility suite separately and together with the existing suite.
 
 Before release:
 
-1. run `npm pack --dry-run` and confirm the Codex manifest, both skills, shared
-   adapter, canonical command/agent/rule files, and docs are included;
+1. run `npm pack --dry-run` and confirm canonical Claude command, agent, rule,
+   and documentation files are included while `.codex-plugin/` and `skills/`
+   are excluded;
 2. validate the manifest, skill frontmatter, canonical references, and runtime
    adapter with the compatibility suite;
-3. confirm the local Codex CLI can list its configured GitLab MCP server and
+3. run Claude's plugin inventory against `./claude-plugin` and confirm exactly
+   the three canonical Claude commands;
+4. confirm the local Codex CLI can list its configured GitLab MCP server and
    plugin marketplaces without changing plugin state;
-4. run a disposable GitLab MR smoke test when a safe MR URL is available.
+5. run a disposable GitLab MR smoke test when a safe MR URL is available.
 
 The live MR smoke test is not a prerequisite for publishing when no disposable
 MR is supplied, because both workflows write comments to GitLab.
@@ -270,7 +300,8 @@ single Codex restart needed to discover the new skills.
 
 ## Release and Local Installation
 
-Release `2.4.0` as a backward-compatible minor version.
+Release `2.4.1` as the backward-compatible patch that supersedes v2.4.0's
+dual-runtime discovery conflict.
 
 The release follows `RELEASE.md`, updated for these four synchronized files:
 
@@ -282,7 +313,7 @@ The release follows `RELEASE.md`, updated for these four synchronized files:
 After verification and the repository-mandated full-diff approval:
 
 1. commit the complete release;
-2. create annotated tag `v2.4.0`;
+2. create annotated tag `v2.4.1`;
 3. push `main` and the tag;
 4. publish the GitHub release with notes covering Codex CLI support and neutral
    config migration;
@@ -302,7 +333,9 @@ After verification and the repository-mandated full-diff approval:
 - GitLab MCP preflight fails safely before external writes.
 - Existing `.claude/review-config.yml` settings migrate without data loss.
 - All automated checks pass.
-- Version `2.4.0` is tagged, pushed, and published on GitHub.
+- Claude exposes exactly its three canonical commands without duplicate skill
+  names.
+- Version `2.4.1` is tagged, pushed, and published on GitHub.
 - The released plugin is installed and enabled in the local Codex configuration.
 - The only remaining manual action is restarting Codex.
 
@@ -316,3 +349,5 @@ After verification and the repository-mandated full-diff approval:
   https://learn.chatgpt.com/docs/agent-configuration/subagents
 - Codex MCP configuration:
   https://learn.chatgpt.com/docs/extend/mcp
+- Claude plugin discovery and same-marketplace symlink behavior:
+  https://code.claude.com/docs/en/plugins-reference

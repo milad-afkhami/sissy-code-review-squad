@@ -31,6 +31,23 @@ Confirm `sissy-code-review-squad@sissy-code-review-squad` is installed and
 enabled, then restart Codex. Codex exposes `$sissy-squad` and
 `$follow-up-review`; it does not expose `$clear-mr-comments`.
 
+### Duplicate Claude Commands
+
+**Symptom:** `claude plugin details` reports five skills, with duplicate
+`sissy-squad` and `follow-up-review` entries.
+
+This was a v2.4.0 packaging conflict. Refresh the marketplace and update to
+v2.4.1 or later:
+
+```bash
+claude plugin marketplace update sissy-code-review-squad
+claude plugin update sissy-code-review-squad@sissy-code-review-squad
+claude plugin details sissy-code-review-squad@sissy-code-review-squad
+```
+
+The details output should list exactly three Claude commands:
+`clear-mr-comments`, `follow-up-review`, and `sissy-squad`.
+
 ### npm Installation Fails
 
 **Symptom:** `npm install` or `claude plugins install` fails.
