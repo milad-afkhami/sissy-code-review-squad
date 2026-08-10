@@ -62,7 +62,7 @@ Map canonical Claude model tiers exactly:
 | --- | --- | --- |
 | Haiku | `gpt-5.6-luna` | `medium` |
 | Sonnet | `gpt-5.6-terra` | `high` |
-| Opus | `gpt-5.6` | `xhigh` |
+| Opus | `gpt-5.6-sol` | `xhigh` |
 
 Use this filename-to-tier metadata before the child reads its canonical file:
 

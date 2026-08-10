@@ -61,7 +61,7 @@ class CodexCompatibilityTests(unittest.TestCase):
     def test_codex_manifest_declares_skills_plugin(self) -> None:
         manifest = json.loads(read_text(".codex-plugin/plugin.json"))
         self.assertEqual("sissy-code-review-squad", manifest["name"])
-        self.assertEqual("2.4.1", manifest["version"])
+        self.assertEqual("2.4.2", manifest["version"])
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual(
             "Sissy Code Review Squad",
@@ -168,9 +168,11 @@ class CodexCompatibilityTests(unittest.TestCase):
         for row in (
             "| Haiku | `gpt-5.6-luna` | `medium` |",
             "| Sonnet | `gpt-5.6-terra` | `high` |",
-            "| Opus | `gpt-5.6` | `xhigh` |",
+            "| Opus | `gpt-5.6-sol` | `xhigh` |",
         ):
             self.assertIn(row, body)
+
+        self.assertNotIn("| Opus | `gpt-5.6` | `xhigh` |", body)
 
         self.assertIn("before creating a worktree", body)
         self.assertIn("before posting GitLab content", body)
@@ -361,7 +363,7 @@ class CodexCompatibilityTests(unittest.TestCase):
             path: json.loads(read_text(path))["version"]
             for path in paths
         }
-        self.assertEqual({"2.4.1"}, set(versions.values()), versions)
+        self.assertEqual({"2.4.2"}, set(versions.values()), versions)
 
 
 if __name__ == "__main__":

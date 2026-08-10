@@ -43,7 +43,7 @@ claude plugins list
 Add the released repository tag as a marketplace, then install the plugin:
 
 ```bash
-codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v2.4.1
+codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v2.4.2
 codex plugin add sissy-code-review-squad@sissy-code-review-squad
 codex plugin list --json
 ```

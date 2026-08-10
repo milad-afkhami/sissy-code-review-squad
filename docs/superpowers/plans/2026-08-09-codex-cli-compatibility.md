@@ -313,7 +313,7 @@ Expected: both tests pass. At this stage the skills contain the required adapter
 
 - Initial-review MCP operations: `search_repositories`, `get_merge_request`, `get_merge_request_diffs`, `create_merge_request_thread`, `create_merge_request_note`.
 - Follow-up adds: `mr_discussions`, `create_merge_request_discussion_note`, `resolve_merge_request_thread`.
-- Model mapping: Haiku → `gpt-5.6-luna`/`medium`; Sonnet → `gpt-5.6-terra`/`high`; Opus → `gpt-5.6`/`xhigh`.
+- Model mapping: Haiku → `gpt-5.6-luna`/`medium`; Sonnet → `gpt-5.6-terra`/`high`; Opus → `gpt-5.6-sol`/`xhigh`.
 - Agent-file model metadata is mirrored only as a filename-to-tier table; no prompt body is copied.
 
 - [ ] **Step 1: Add failing adapter-contract tests**
@@ -350,7 +350,7 @@ Add these methods inside `CodexCompatibilityTests`:
         for model, effort in (
             ("gpt-5.6-luna", "medium"),
             ("gpt-5.6-terra", "high"),
-            ("gpt-5.6", "xhigh"),
+            ("gpt-5.6-sol", "xhigh"),
         ):
             self.assertRegex(
                 body,
@@ -457,7 +457,7 @@ Map canonical Claude model tiers exactly:
 | --- | --- | --- |
 | Haiku | `gpt-5.6-luna` | `medium` |
 | Sonnet | `gpt-5.6-terra` | `high` |
-| Opus | `gpt-5.6` | `xhigh` |
+| Opus | `gpt-5.6-sol` | `xhigh` |
 
 Use this filename-to-tier metadata when selecting a model before the child reads its canonical file:
 

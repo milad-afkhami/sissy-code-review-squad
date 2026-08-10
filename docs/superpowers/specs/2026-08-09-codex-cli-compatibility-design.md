@@ -138,7 +138,7 @@ The shared adapter defines these mappings:
 | --- | --- | --- |
 | Haiku | `gpt-5.6-luna` | `medium` |
 | Sonnet | `gpt-5.6-terra` | `high` |
-| Opus | `gpt-5.6` | `xhigh` |
+| Opus | `gpt-5.6-sol` | `xhigh` |
 
 If an explicitly mapped Codex model is unavailable, stop before posting any
 GitLab content and report the unavailable model. Do not silently downgrade or
