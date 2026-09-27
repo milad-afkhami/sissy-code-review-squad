@@ -29,10 +29,10 @@ PROTECTED_SHA256 = {
     "agents/security.md": "1cfd5c692b5894138908bdc5dca723135964dfca60d03af92ec7d3dcd652404f",
     "agents/seo.md": "cb626806e78fd25a3818e8a16473bf31a112a23593f3b519a82808c34d0ace83",
     "agents/styling.md": "c981357b5c6bfdc9d871eca555d2a7b4681ba3bb87a44774260e54a7b8113169",
-    "agents/thread-evaluator.md": "e9fdf2039c663ab9e540bf1d69b4d36b7614805e8cb407f554450542eded5866",
+    "agents/thread-evaluator.md": "54832fd565a889666f78b5ee706eb932fd53ca91daa68641465b9848b57a3b95",
     "agents/typescript.md": "056f4dd3c82172693325504133fd0c900ee905e2759ef70ac6820a2ceea5a18e",
     "commands/clear-mr-comments.md": "b7b9904bcbe6a79bcc64d3602b24efafb38a41b0f7abfa94475003338f093838",
-    "commands/follow-up-review.md": "4add04c2970c909462bfa1d89b9df1ddbdf838a58c0278174c634b5da7f04602",
+    "commands/follow-up-review.md": "2c644d5a313e2095c8da0567b90f091a2ce28d573bbae9f6dcba816beb253a00",
     "rules/code-review-standards.md": "141022b7be6457761bed648e2925b5ddaf765205d8801c9e6001e269179635b4",
 }
 
@@ -61,7 +61,7 @@ class CodexCompatibilityTests(unittest.TestCase):
     def test_codex_manifest_declares_skills_plugin(self) -> None:
         manifest = json.loads(read_text(".codex-plugin/plugin.json"))
         self.assertEqual("sissy-code-review-squad", manifest["name"])
-        self.assertEqual("2.4.2", manifest["version"])
+        self.assertEqual("2.5.0", manifest["version"])
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual(
             "Sissy Code Review Squad",
@@ -363,7 +363,7 @@ class CodexCompatibilityTests(unittest.TestCase):
             path: json.loads(read_text(path))["version"]
             for path in paths
         }
-        self.assertEqual({"2.4.2"}, set(versions.values()), versions)
+        self.assertEqual({"2.5.0"}, set(versions.values()), versions)
 
 
 if __name__ == "__main__":

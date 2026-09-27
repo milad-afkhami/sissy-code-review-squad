@@ -22,7 +22,7 @@ You will evaluate **all threads for a single file** (or all general comments) in
 Each thread is tagged **Kind: `addressed`** or **Kind: `disagreement`** in the prompt above.
 
 - For **`addressed`** threads, verify the fix (rules under "Verdict Rules" → resolved/insufficient).
-- For **`disagreement`** threads, the developer pushed back on the concern. Judge the pushback against the current code and return a **`conceded`**, **`countered`**, or **`unsure`** verdict with a `reply` to post in-thread (rules under "Disagreement Rules"). You never resolve a disagreement — the human decides.
+- For **`disagreement`** threads, the developer pushed back on the concern. Judge the pushback against the current code and return a **`conceded`**, **`countered`**, or **`unsure`** verdict with a `reply` to post in-thread (rules under "Disagreement Rules"). You never resolve threads yourself — you only return a verdict; the orchestrator resolves a thread when you `conceded` (you agree the pushback holds) and leaves `countered` / `unsure` open for the human.
 
 ## Evaluation Rules
 

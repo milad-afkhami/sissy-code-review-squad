@@ -15,7 +15,7 @@ This is a single self-contained command — there is no separate setup step:
 2. Checks each thread for developer replies to classify them
 3. Categorizes threads into: addressed (developer's reply signals they tried to fix it), disagreement (developer's reply pushes back on the concern), or untouched
 4. For addressed **and disagreed** threads, provisions an isolated worktree of the MR's **source branch** and spawns evaluator agents against the current code in that worktree
-5. Resolves verified fixes; replies with feedback on inadequate fixes; and posts a position on each disagreement (agree / counter / your-call) — **never resolving a disagreement**, so you keep the final call
+5. Resolves verified fixes; replies with feedback on inadequate fixes; and posts a position on each disagreement (agree / counter / your-call) — resolving a disagreement **only when it agrees the developer's pushback holds** (`agree`), and leaving `counter` / `your-call` threads open so you keep the final call
 6. Posts a summary note and removes the worktree
 
 Your default checkout — including uncommitted, unstaged changes — is never
@@ -29,7 +29,7 @@ worktree is created at all.
 After a review, developers should reply to each thread:
 
 - If they've addressed it: reply with "done"/"fixed"/etc., or simply describe the change they made ("extracted a shared component", "deleted the unused export") — a plain description counts just as well.
-- If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement — Police Sissy will post a position on it (agree / counter / your-call) but never resolve it, leaving the final call to a human. Tone doesn't change the classification; the conclusion does.
+- If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement — Police Sissy will post a position on it (agree / counter / your-call). If it **agrees** the pushback holds, it resolves the thread (reopen it if you disagree); for **counter** / **your-call** it replies and leaves the thread open, so the final call is yours. Tone doesn't change the classification; the conclusion does.
 
 ## Instructions
 
@@ -233,13 +233,31 @@ mcp__gitlab-mcp__create_merge_request_discussion_note(
 )
 ```
 
-**For `verdict == "conceded" | "countered" | "unsure"` (Kind: disagreement):**
+**For `verdict == "conceded"` (Kind: disagreement — Police Sissy agrees the pushback holds):**
+
+Post the evaluator's `reply` with the `✅ [agrees]` badge, then **resolve the thread**. When the follow-up reviewer agrees the developer's pushback is correct, both sides concur and there is nothing left for a human to arbitrate:
+
+```
+mcp__gitlab-mcp__create_merge_request_discussion_note(
+  project_id: "{project_id}",
+  merge_request_iid: "{mr_iid}",
+  discussion_id: "{discussion_id}",
+  body: "> SubAgent: 👮 Police Sissy (Follow-Up Review)\n> **✅ [agrees]** Your pushback holds\n\n{reply}\n\n_Resolving this thread — reopen it if you disagree._"
+)
+mcp__gitlab-mcp__resolve_merge_request_thread(
+  project_id: "{project_id}",
+  merge_request_iid: "{mr_iid}",
+  discussion_id: "{discussion_id}",
+  resolved: true
+)
+```
+
+**For `verdict == "countered" | "unsure"` (Kind: disagreement — still your call):**
 
 Post the evaluator's `reply` to the thread and **do NOT resolve it** — the human decides. Pick the badge/headline by verdict:
 
 | verdict | badge | headline |
 | --- | --- | --- |
-| `conceded` | `✅ [agrees]` | Your pushback holds |
 | `countered` | `↩️ [counter]` | Concern may still stand |
 | `unsure` | `🤔 [your-call]` | Judgment call |
 
@@ -252,9 +270,9 @@ mcp__gitlab-mcp__create_merge_request_discussion_note(
 )
 ```
 
-Never call `resolve_merge_request_thread` for a disagreement verdict.
+Never call `resolve_merge_request_thread` for a `countered` or `unsure` verdict — only `conceded` disagreements are auto-resolved.
 
-Store counts: `{resolved_count}`, `{insufficient_count}`, `{conceded_count}`, `{countered_count}`, `{unsure_count}`. The three disagreement counts must sum to `{disagreement_count}`.
+Store counts: `{resolved_count}`, `{insufficient_count}`, `{conceded_count}`, `{countered_count}`, `{unsure_count}`. The three disagreement counts must sum to `{disagreement_count}`. Also derive `{open_disagreement_count} = {countered_count} + {unsure_count}` — the disagreements left open for you; the `{conceded_count}` conceded threads are now resolved.
 
 ### Step 7: Post Summary Note
 
@@ -280,8 +298,9 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 | Outcome                                               | Count                |
 | ----------------------------------------------------- | -------------------- |
 | ✅ Verified and resolved                              | {resolved_count}     |
+| ✅ Agreed and resolved (developer's pushback held)    | {conceded_count}     |
 | 🔄 Needs more work                                    | {insufficient_count} |
-| 💬 Developer disagreed — replied, your decision (✅ {conceded_count} agree · ↩️ {countered_count} counter · 🤔 {unsure_count} your-call) | {disagreement_count} |
+| 💬 Developer disagreed — replied, your decision (↩️ {countered_count} counter · 🤔 {unsure_count} your-call) | {open_disagreement_count} |
 | 👀 Untouched — skipped (awaiting developer)           | {untouched_count}    |
 
 {If resolved_count > 0:}
@@ -296,16 +315,22 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 {For each insufficient thread, list: brief description and what remains unaddressed}
 
-{If disagreement_count > 0:}
+{If conceded_count > 0:}
+
+### Agreed and Resolved
+
+{For each conceded disagreement, list its `new_path` (or "general comment" if null) and a one-line gist of why Police Sissy agreed the developer's pushback held. These threads have been resolved — reopen any you disagree with.}
+
+{If open_disagreement_count > 0:}
 
 ### Disagreements — Police Sissy Replied, Your Decision
 
-{For each disagreement, list its `new_path` (or "general comment" if null), Police Sissy's stance (✅ agrees / ↩️ counter / 🤔 your-call), and a one-line gist of the reply. Police Sissy has posted a position in each thread but resolved none — you make the final call.}
+{For each still-open disagreement (`countered` / `unsure`), list its `new_path` (or "general comment" if null), Police Sissy's stance (↩️ counter / 🤔 your-call), and a one-line gist of the reply. Police Sissy posted a position in each of these threads but did not resolve them — you make the final call. (Conceded threads are listed above under "Agreed and Resolved" instead.)}
 
 ---
 
-{If all addressed threads are resolved AND disagreement_count == 0 AND untouched_count == 0:}
-✅ **All review threads are addressed.** This MR may be ready to merge pending final human approval.
+{If insufficient_count == 0 AND open_disagreement_count == 0 AND untouched_count == 0:}
+✅ **All review threads are addressed.** This MR may be ready to merge pending final human approval. (Any conceded disagreements were resolved in Police Sissy's favor of the developer.)
 
 {Else if untouched_count > 0:}
 👀 **{untouched_count} thread(s) still awaiting developer action.** The developer should reply to addressed threads and run follow-up again.
@@ -313,14 +338,14 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 {Else if insufficient_count > 0:}
 🔄 **{insufficient_count} thread(s) need further attention.** Please address the remaining concerns and run follow-up again.
 
-{Else if disagreement_count > 0:}
-💬 **{disagreement_count} disagreement(s) replied — awaiting your decision.** Review Police Sissy's position in each thread and resolve it or reply.
+{Else if open_disagreement_count > 0:}
+💬 **{open_disagreement_count} disagreement(s) replied — awaiting your decision.** Review Police Sissy's position in each open thread and resolve it or reply.
 ```
 
 After the summary note is posted, run:
 
 ```bash
-(result=$(notify-send "👮 Follow-Up Review Complete" "✅ {resolved_count} resolved · 🔄 {insufficient_count} needs work · 💬 {disagreement_count} replied · 👀 {untouched_count} untouched" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
+(result=$(notify-send "👮 Follow-Up Review Complete" "✅ {resolved_count} resolved · 🤝 {conceded_count} agreed · 🔄 {insufficient_count} needs work · 💬 {open_disagreement_count} replied · 👀 {untouched_count} untouched" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
 ```
 
 Where each count comes from the verdict tallies collected in Step 6. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
@@ -365,7 +390,8 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 6. **PROCESS VERDICTS** (serial)
    - resolved → resolve thread silently via MCP
    - insufficient → reply with explanation via MCP
-   - conceded|countered|unsure → post reply, never resolve
+   - conceded → post reply (agrees), then resolve thread via MCP
+   - countered|unsure → post reply, never resolve
 
 7. **POST SUMMARY NOTE** → GitLab MCP
 
@@ -382,7 +408,7 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.
 8. **No new issues**: Police Sissy only evaluates existing concerns. It does NOT raise new issues.
 9. **Benefit of the doubt**: When evidence is ambiguous, resolve in the developer's favor.
-10. **Skip policy**: Untouched threads are always skipped (awaiting the developer). Disagreements are NOT skipped — Police Sissy posts a position in each, but never auto-resolves; the human decides.
+10. **Skip policy**: Untouched threads are always skipped (awaiting the developer). Disagreements are NOT skipped — Police Sissy posts a position in each. It auto-resolves a disagreement **only** when it agrees the developer's pushback holds (`conceded`); `countered` and `unsure` threads are left open for the human to decide.
 11. **File reads**: Evaluators read source files from the worktree at `{worktree_path}/{File Path}` (the `Project Root` passed in each prompt). If a file is absent (e.g., deleted in the MR), the evaluator falls back to the diff text.
 12. **Concurrent reviews are safe**: each run uses a uniquely-named worktree and removes only its own, so multiple reviews can run against the same repo at once.
 ```
