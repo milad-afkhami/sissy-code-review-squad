@@ -58,12 +58,26 @@ python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 python3 -m json.tool .codex-plugin/plugin.json >/dev/null
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
-claude --plugin-dir ./claude-plugin plugin details sissy-code-review-squad
+python3 - <<'PY'
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+with tempfile.TemporaryDirectory() as temp_dir:
+    projection = Path(temp_dir) / "claude-plugin"
+    shutil.copytree("claude-plugin", projection)
+    subprocess.run(
+        ["claude", "--plugin-dir", str(projection), "plugin", "details", "sissy-code-review-squad"],
+        check=True,
+    )
+PY
 npm pack --dry-run --json
 git diff --check
 ```
 
-Confirm Claude reports exactly three skills (`clear-mr-comments`,
+The temporary copy materializes the projection's symlinks, matching an installed
+plugin. Confirm Claude reports exactly three skills (`clear-mr-comments`,
 `follow-up-review`, and `sissy-squad`) with no duplicate names. Confirm the npm
 file list contains the canonical Claude command, agent, and rule files while
 excluding `.codex-plugin/` and `skills/`; Codex is distributed from the Git

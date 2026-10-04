@@ -61,7 +61,10 @@ class CodexCompatibilityTests(unittest.TestCase):
     def test_codex_manifest_declares_skills_plugin(self) -> None:
         manifest = json.loads(read_text(".codex-plugin/plugin.json"))
         self.assertEqual("sissy-code-review-squad", manifest["name"])
-        self.assertEqual("2.5.0", manifest["version"])
+        self.assertEqual(
+            json.loads(read_text("package.json"))["version"],
+            manifest["version"],
+        )
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual(
             "Sissy Code Review Squad",
@@ -109,19 +112,24 @@ class CodexCompatibilityTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("claude"), "Claude CLI is not installed")
     def test_claude_projection_exposes_only_canonical_commands(self) -> None:
-        completed = subprocess.run(
-            [
-                "claude",
-                "--plugin-dir",
-                str(ROOT / "claude-plugin"),
-                "plugin",
-                "details",
-                "sissy-code-review-squad",
-            ],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # The CLI inventory does not traverse component-directory symlinks,
+            # while installed plugins contain materialized directories.
+            projection = Path(temp_dir) / "claude-plugin"
+            shutil.copytree(ROOT / "claude-plugin", projection)
+            completed = subprocess.run(
+                [
+                    "claude",
+                    "--plugin-dir",
+                    str(projection),
+                    "plugin",
+                    "details",
+                    "sissy-code-review-squad",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
         self.assertEqual(0, completed.returncode, completed.stderr or completed.stdout)
         inventory = re.search(
             r"(?m)^  Skills \((\d+)\)\s+(.+)$",
@@ -367,7 +375,8 @@ class CodexCompatibilityTests(unittest.TestCase):
             path: json.loads(read_text(path))["version"]
             for path in paths
         }
-        self.assertEqual({"2.5.0"}, set(versions.values()), versions)
+        self.assertEqual(1, len(set(versions.values())), versions)
+        self.assertRegex(next(iter(versions.values())), r"^\d+\.\d+\.\d+$")
 
 
 if __name__ == "__main__":
