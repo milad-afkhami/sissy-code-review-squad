@@ -35,7 +35,9 @@ For `follow-up-review`, require:
 
 If an operation is absent, stop before creating a worktree or posting GitLab content. Print the missing operation names and tell the user to inspect `codex mcp list` and the configured GitLab MCP server.
 
-Before workflow subagents start, verify every model tier required by the workflow. Use the runtime model catalog when available. Otherwise, start one no-tools readiness subagent for each distinct required model and wait for all readiness checks before continuing. A readiness subagent must only reply `READY`; it must not read files, call tools, or write external content. If an explicit model is unavailable, stop before posting GitLab content. Do not silently substitute, downgrade, or choose another model.
+Before workflow subagents start, resolve every model tier required by the workflow using the ordered candidates in Model Tiers below. Use the current session's runtime model catalog when available and select the first available candidate for each tier. Otherwise, try the candidates in order with no-tools readiness subagents; each must only reply `READY` and must not read files, call tools, or write external content. Advance to the next candidate only when a model is explicitly unavailable. Stop on other readiness errors rather than treating them as model unavailability.
+
+Report the resolved model and reasoning effort for each tier to the user before continuing, including which preferred models were unavailable. Use that resolved pair for every workflow subagent in the tier. If no listed candidate is available for a required tier, stop before creating a worktree or posting GitLab content and name the unavailable candidates. Do not silently substitute, downgrade, or choose an unlisted model.
 
 ## Spawn Canonical Agents
 
@@ -56,13 +58,13 @@ Do not change the canonical data supplied to an agent or the response shape expe
 
 ## Model Tiers
 
-Map canonical Claude model tiers exactly:
+Map canonical Claude model tiers to the first available Codex model in each ordered list. All candidates in a row use that row's reasoning effort:
 
-| Claude tier | Codex model | Reasoning effort |
+| Claude tier | Ordered Codex models | Reasoning effort |
 | --- | --- | --- |
-| Haiku | `gpt-5.6-luna` | `medium` |
-| Sonnet | `gpt-5.6-terra` | `high` |
-| Opus | `gpt-5.6-sol` | `xhigh` |
+| Haiku | `gpt-5.6-luna` → `gpt-6-luna` | `medium` |
+| Sonnet | `gpt-5.6-sol` → `gpt-6-sol` | `high` |
+| Opus | `gpt-5.6-sol` → `gpt-6-sol` | `xhigh` |
 
 Use this filename-to-tier metadata before the child reads its canonical file:
 

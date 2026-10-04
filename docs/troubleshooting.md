@@ -275,6 +275,20 @@ The discovery agent couldn't analyze the codebase.
 2. Check file permissions
 3. This may be transient - retry the review
 
+### "Model Preflight Failed"
+
+The Codex runtime adapter selects the first available model for each required
+agent tier before the review starts. Sonnet agents use `gpt-5.6-sol` at `high`
+reasoning effort, falling back to `gpt-6-sol` at the same effort. Haiku and Opus
+have their own ordered fallbacks in `.codex-plugin/runtime-adapter.md`.
+
+Check the models available in the current Codex session. If neither listed
+candidate for a required tier is available, the review stops before creating a
+worktree or posting GitLab comments. A model available through the OpenAI API
+is not necessarily available to the current Codex account and client. Update
+the adapter's ordered candidates and its compatibility test if your runtime
+offers a different supported model; reinstall the plugin and restart Codex.
+
 ### "Failed to Post Comment"
 
 GitLab rejected the comment posting.

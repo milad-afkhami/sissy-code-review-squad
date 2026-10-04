@@ -166,16 +166,20 @@ class CodexCompatibilityTests(unittest.TestCase):
             self.assertIn(operation, body)
 
         for row in (
-            "| Haiku | `gpt-5.6-luna` | `medium` |",
-            "| Sonnet | `gpt-5.6-terra` | `high` |",
-            "| Opus | `gpt-5.6-sol` | `xhigh` |",
+            "| Haiku | `gpt-5.6-luna` → `gpt-6-luna` | `medium` |",
+            "| Sonnet | `gpt-5.6-sol` → `gpt-6-sol` | `high` |",
+            "| Opus | `gpt-5.6-sol` → `gpt-6-sol` | `xhigh` |",
         ):
             self.assertIn(row, body)
 
         self.assertNotIn("| Opus | `gpt-5.6` | `xhigh` |", body)
+        self.assertNotIn("gpt-5.6-terra", body)
 
-        self.assertIn("before creating a worktree", body)
-        self.assertIn("before posting GitLab content", body)
+        self.assertIn("before creating a worktree or posting GitLab content", body)
+        self.assertIn("select the first available candidate", body)
+        self.assertIn("Advance to the next candidate only when a model is explicitly unavailable", body)
+        self.assertIn("Report the resolved model and reasoning effort", body)
+        self.assertIn("If no listed candidate is available", body)
         self.assertIn("Do not silently substitute", body)
 
     def test_codex_initial_host_does_not_copy_canonical_bodies(self) -> None:
