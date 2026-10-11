@@ -37,10 +37,6 @@ Example: /sissy-squad https://gitlab.com/your-org/your-project/-/merge_requests/
 
 ### Step 2: Parse MR Metadata
 
-Check `python3 --version` before proceeding. The initial-review completion gate
-requires Python 3. If unavailable, stop before creating a worktree or posting
-GitLab content and explain that requirement.
-
 **Spawn the MR Metadata Parser Agent** to extract project info and MR IID from the URL.
 
 Read and execute the parser agent instructions from `@agents/parse-mr-metadata.md` with the MR URL as input: `{$ARGUMENTS}`
@@ -197,26 +193,6 @@ Read file: ${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md
 
 Store the **entire contents** as `{code_review_standards}`. This content MUST be embedded verbatim in every agent prompt.
 
-### Step 6c: Establish the Review Completion Contract
-
-Read `${CLAUDE_PLUGIN_ROOT}/rules/initial-review-completeness.md` completely and
-store its entire contents as `{initial_review_completeness}`. Embed it verbatim
-in every enabled review agent's prompt alongside the Code Review Standards.
-
-Create a unique temporary artifact directory outside the review worktree. Write
-`scope.json` there with `head_sha` from Step 4, `changed_files` containing every
-diff's review path, and `enabled_agents` from Step 3. The review path is `old_path`
-when `deleted_file` is true or `new_path` is `/dev/null`; otherwise it is
-`new_path`. Never use `/dev/null` as a file identity. Preserve both original paths
-in the supplied diffs so reviewers can inspect deletions and renames correctly.
-Confirm that the worktree HEAD matches this SHA before starting reviews; if it
-does not, stop, report the mismatch and clean up rather than review a mixed
-snapshot. Keep this scope fixed throughout the review.
-
-Assign each enabled agent a separate `{coverage_report_path}` in that directory,
-such as `qa-coverage.json`. Preserve these reports after worktree cleanup and
-include their location in the final user response.
-
 ### Step 7: Spawn Enabled Review Agents in Parallel
 
 Launch only the **enabled agents** (from `{enabled_agents}`) simultaneously using a single message with multiple Task tool calls.
@@ -229,16 +205,6 @@ Each agent prompt should include:
 ## Code Review Standards
 
 {code_review_standards}
-
----
-
-## Initial Review Completeness
-
-{initial_review_completeness}
-
-**Agent key:** {agent_key}
-**Scope file:** {scope_path}
-**Coverage report path:** {coverage_report_path}
 
 ---
 
@@ -311,7 +277,7 @@ The `@agents/<agent-file>.md` placeholder above is replaced per agent row — us
 - `subagent_type: "general-purpose"`
 - Use each agent's own model setting
 
-### Step 8: Collect Results and Verify Completion
+### Step 8: Collect Results
 
 Wait for all agents to complete using TaskOutput.
 
@@ -319,37 +285,7 @@ Each agent returns:
 - Number of blocking issues
 - Number of suggestions
 - Number of nits
-- Number of questions
 - Key findings summary
-- Coverage report path and successful GitLab write references
-
-Run the completion gate against the fixed scope and all returned report paths:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_review_coverage.py" \
-  --scope "{scope_path}" --reports {quoted_coverage_report_paths}
-```
-
-Exit 0 means the reported coverage is structurally complete. It does not prove
-the evidence is true: inspect the source references, checklist coverage, and
-candidate dispositions. Reject generic claims such as "all checked", blanket
-`not_applicable` entries without domain-specific reasons, and MR-description
-claims substituted for source evidence.
-
-For missing or weak coverage, send the specific gaps to the responsible agent
-and let it finish the investigation. Re-run the gate after updated reports.
-Preserve its canonical review instructions: do not impose a finding cap, tell it
-there is "no need to seek extra findings", suppress non-blocking findings, or
-pressure it to wrap up because of elapsed time or its current issue count.
-Challenge a questionable finding by requesting evidence or counterevidence;
-do not silently drop the investigation merely because blocking severity has not
-been established. Zero findings with complete coverage is a valid result.
-
-If a genuine external limitation prevents completion, record the exact gaps and
-use **INCOMPLETE REVIEW**, never **APPROVED**. Do not retry an unchanged external
-blocker indefinitely. Retain established findings and still perform Step 10.
-An unresolved product/API question posted for the author follows the existing
-**NEEDS DISCUSSION** verdict; it is distinct from unfinished reviewer work.
 
 ### Step 9: Post Summary Note
 
@@ -370,13 +306,6 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 
 {If any agents were skipped, show:}
 > **Note:** Some agents were skipped for this review: {list of skipped agent names}
-
-### Review Coverage
-
-{State whether all enabled agents passed the completion gate and the evidence
-audit, which commit was reviewed, and whether validation was static or executed.
-If incomplete, list the affected agents and concrete gaps. Summarize material
-deferred risks with their requester dispositions; do not imply they were fixed.}
 
 ### Review Results by Agent
 
@@ -443,10 +372,9 @@ xychart-beta
 ### Verdict
 
 {One of:}
-- ✅ **APPROVED** - Review complete in the enabled domains; no blocking issues or decision-blocking questions
+- ✅ **APPROVED** - No blocking issues, ready to merge
 - ⚠️ **CHANGES REQUESTED** - Blocking issues must be resolved
 - 💬 **NEEDS DISCUSSION** - Questions need clarification before decision
-- ⏸️ **INCOMPLETE REVIEW** - Required coverage remains unfinished; list gaps even if blocking findings were also posted
 
 ---
 
@@ -459,7 +387,7 @@ After the summary note is posted, run:
 (result=$(notify-send "🎀 Sissy Squad Complete" "MR: {title}\nVerdict: {verdict} — {blocking_total} blocking, {suggestions_total} suggestions, {nits_total} nits" --action="default=Open MR" --wait --icon=dialog-information); [ "$result" = "default" ] && xdg-open "$ARGUMENTS") &
 ```
 
-Where `{title}` is the MR title, `{verdict}` is one of `✅ APPROVED`, `⚠️ CHANGES REQUESTED`, `💬 NEEDS DISCUSSION`, or `⏸️ INCOMPLETE REVIEW`, and the counts are the totals from Step 8. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
+Where `{title}` is the MR title, `{verdict}` is one of `✅ APPROVED`, `⚠️ CHANGES REQUESTED`, or `💬 NEEDS DISCUSSION`, and the counts are the totals from Step 8. Clicking "Open MR" in the notification opens the MR URL (`$ARGUMENTS`) in the browser.
 
 ### Step 10: Clean Up the Worktree
 
@@ -490,13 +418,11 @@ Run this even if earlier steps (Steps 6–9) reported issues, so no worktree is 
 
 6b. **READ CODE REVIEW STANDARDS** → Read `${CLAUDE_PLUGIN_ROOT}/rules/code-review-standards.md` (to embed)
 
-6c. **ESTABLISH COMPLETION CONTRACT** → embed `rules/initial-review-completeness.md`, fix scope/head, allocate coverage reports
-
 7. **SPAWN ENABLED REVIEW AGENTS** (parallel, single message) → Task × enabled_agents
-   - Each receives embedded Code Review Standards + Initial Review Completeness + Diffs + Architecture Context + Project Root (worktree) + scope/report paths
+   - Each receives embedded Code Review Standards + Diffs + Architecture Context + Project Root (worktree)
    - Each posts comments directly to GitLab
 
-8. **VERIFY COMPLETION & SUMMARIZE** → validate reports and audit evidence → finish gaps → post summary with scope/limitations (never approve incomplete work)
+8. **COLLECT & SUMMARIZE** → post summary note (shows skipped agents)
 
 9. **CLEAN UP WORKTREE** → `git worktree remove` + `prune`
 

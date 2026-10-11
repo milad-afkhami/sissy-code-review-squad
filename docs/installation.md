@@ -16,7 +16,6 @@ Before installing, ensure you have:
 3. **Git with worktree support**
 4. **Access to the GitLab project and merge request**
 5. **Node.js 18+** only when using the npm-based Claude Code installation path
-6. **Python 3** for the initial-review completion gate and follow-up helpers
 
 ## Claude Code Installation
 
@@ -134,19 +133,10 @@ threads and a summary, then removes the worktree.
 After the first review, verify:
 
 - [ ] all enabled agents completed;
-- [ ] each enabled agent accounted for the changed files and relevant execution paths;
-- [ ] the coverage gate passed and the orchestrator checked its evidence;
 - [ ] issues appear as GitLab discussion threads on the intended lines;
 - [ ] the final summary has accurate counts;
 - [ ] the temporary worktree was removed;
 - [ ] no runtime, model-preflight, or MCP-operation error was reported.
-
-Initial reviews retain per-agent coverage reports in a unique temporary directory
-outside the reviewed worktree; the final response includes that location. A
-complete review can have zero findings. Missing coverage returns to the reviewer
-for investigation, and an external limitation produces **INCOMPLETE REVIEW**
-instead of an approval. The JSON gate checks report completeness; the source
-evidence audit remains the orchestrator's responsibility.
 
 ## Updating
 

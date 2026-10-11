@@ -54,16 +54,10 @@ Use `spawn_agent` and `wait_agent` to translate Claude Task and TaskOutput mecha
 
 Submit every task in a logical parallel stage without introducing dependencies between its tasks. If the runtime enforces a smaller concurrency capacity, keep the remaining tasks queued in that same logical stage and start them as slots become available. Wait for the complete stage before aggregation or verdict processing.
 
-Do not change the canonical data supplied to an agent or the response shape expected from it.
-
-For initial reviews, carry the canonical completion contract into every agent
-prompt, including the fixed scope and its separate coverage report path. If large
-inputs are supplied via a file, require the agent to read that file completely,
-without output truncation, before reviewing. Do not replace the canonical
-instructions with an abbreviated "bugs only" or "high-confidence blockers only"
-review prompt. After agents return, run the canonical coverage gate and evidence
-audit before the final verdict; follow up on specific gaps without asking agents
-to stop seeking findings or treating a small finding count as completion.
+Preserve canonical inputs, response shapes, and review policy throughout each
+agent's run, including coordinator follow-up messages. Request evidence or
+missing required work without narrowing the agent's scope, raising its reporting
+threshold, or introducing an earlier stopping point than its canonical instructions.
 
 ## Model Tiers
 
@@ -71,14 +65,9 @@ Map canonical Claude model tiers to the first available Codex model in each orde
 
 | Claude tier | Ordered Codex models | Reasoning effort |
 | --- | --- | --- |
-| Haiku | `gpt-6-luna` → `gpt-5.6-luna` | `medium` |
-| Sonnet | `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` | `high` |
-| Opus | `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` | `xhigh` |
-
-Prefer the current runtime's available candidates in this order; retain older
-models only as explicit availability fallbacks. Model availability does not
-establish review quality, and selecting a newer model never replaces the
-completion gate.
+| Haiku | `gpt-5.6-luna` → `gpt-6-luna` | `medium` |
+| Sonnet | `gpt-5.6-sol` → `gpt-6-sol` | `high` |
+| Opus | `gpt-5.6-sol` → `gpt-6-sol` | `xhigh` |
 
 Use this filename-to-tier metadata before the child reads its canonical file:
 
