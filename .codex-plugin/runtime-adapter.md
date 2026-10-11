@@ -54,7 +54,10 @@ Use `spawn_agent` and `wait_agent` to translate Claude Task and TaskOutput mecha
 
 Submit every task in a logical parallel stage without introducing dependencies between its tasks. If the runtime enforces a smaller concurrency capacity, keep the remaining tasks queued in that same logical stage and start them as slots become available. Wait for the complete stage before aggregation or verdict processing.
 
-Do not change the canonical data supplied to an agent or the response shape expected from it.
+Preserve canonical inputs, response shapes, and review policy throughout each
+agent's run, including coordinator follow-up messages. Request evidence or
+missing required work without narrowing the agent's scope, raising its reporting
+threshold, or introducing an earlier stopping point than its canonical instructions.
 
 ## Model Tiers
 
