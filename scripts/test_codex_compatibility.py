@@ -174,9 +174,9 @@ class CodexCompatibilityTests(unittest.TestCase):
             self.assertIn(operation, body)
 
         for row in (
-            "| Haiku | `gpt-5.6-luna` → `gpt-6-luna` | `medium` |",
-            "| Sonnet | `gpt-5.6-sol` → `gpt-6-sol` | `high` |",
-            "| Opus | `gpt-5.6-sol` → `gpt-6-sol` | `xhigh` |",
+            "| Haiku | `gpt-6-luna` → `gpt-5.6-luna` | `medium` |",
+            "| Sonnet | `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` | `high` |",
+            "| Opus | `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` | `xhigh` |",
         ):
             self.assertIn(row, body)
 
@@ -189,6 +189,21 @@ class CodexCompatibilityTests(unittest.TestCase):
         self.assertIn("Report the resolved model and reasoning effort", body)
         self.assertIn("If no listed candidate is available", body)
         self.assertIn("Do not silently substitute", body)
+
+    def test_initial_review_requires_coverage_before_verdict(self) -> None:
+        command = read_text("commands/sissy-squad.md")
+        contract = read_text("rules/initial-review-completeness.md")
+        adapter = read_text(".codex-plugin/runtime-adapter.md")
+        self.assertLess(command.index("### Step 6c:"), command.index("### Step 7:"))
+        self.assertLess(command.index("validate_review_coverage.py"), command.index("### Step 9:"))
+        self.assertIn("{initial_review_completeness}", command)
+        self.assertIn("{coverage_report_path}", command)
+        self.assertIn("INCOMPLETE REVIEW", command)
+        self.assertIn("scope.changed_files", contract)
+        self.assertIn("candidate dispositions", command)
+        self.assertIn("when `deleted_file` is true or `new_path` is `/dev/null`", command)
+        self.assertIn("canonical coverage gate and evidence", adapter)
+        self.assertIn("without output truncation", adapter)
 
     def test_codex_initial_host_does_not_copy_canonical_bodies(self) -> None:
         host_paths = (
@@ -324,6 +339,8 @@ class CodexCompatibilityTests(unittest.TestCase):
             "commands/clear-mr-comments.md",
             "agents/security.md",
             "rules/code-review-standards.md",
+            "rules/initial-review-completeness.md",
+            "scripts/validate_review_coverage.py",
         }
         self.assertLessEqual(required, packaged)
         cache_artifacts = {
