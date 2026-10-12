@@ -59,6 +59,17 @@ agent's run, including coordinator follow-up messages. Request evidence or
 missing required work without narrowing the agent's scope, raising its reporting
 threshold, or introducing an earlier stopping point than its canonical instructions.
 
+## Tool Output (Codex)
+
+Pass this section verbatim to every workflow subagent. `functions.exec` has an
+outer output cap: increasing a nested tool's `max_output_tokens` does not raise
+it. Retain large results with `store()` or a scratch file, then inspect each source
+in bounded pages; print MCP text content instead of JSON-stringifying the whole
+result. Set the outer `// @exec: {"max_output_tokens": ...}` budget for each page.
+If either layer reports truncation, recover and read the omitted content from
+every affected source before concluding the review. If recovery fails, report
+the missing context explicitly; do not treat a truncated read as a complete one.
+
 ## Model Tiers
 
 Map canonical Claude model tiers to the first available Codex model in each ordered list. All candidates in a row use that row's reasoning effort:
