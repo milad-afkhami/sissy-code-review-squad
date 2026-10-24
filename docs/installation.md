@@ -146,13 +146,17 @@ Claude Code:
 claude plugins update sissy-code-review-squad
 ```
 
-Codex CLI refreshes the configured Git marketplace, then reinstalls the selected
-plugin version:
+Codex marketplaces retain their configured Git ref. To move to a new release
+tag, replace this marketplace's old pin and reinstall:
 
 ```bash
-codex plugin marketplace upgrade sissy-code-review-squad
+codex plugin marketplace remove sissy-code-review-squad
+codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref v<new-version>
 codex plugin add sissy-code-review-squad@sissy-code-review-squad
 ```
+
+`marketplace upgrade` only refreshes the existing pin. For a first install, skip
+the removal command.
 
 Restart the affected runtime after an update.
 
