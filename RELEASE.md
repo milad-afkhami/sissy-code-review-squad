@@ -148,24 +148,21 @@ no duplicate `sissy-squad` or `follow-up-review` entry.
 
 ### 9. Install the Released Codex Plugin
 
-For the first install, add the released repository tag as a marketplace and
-install the plugin:
+Codex marketplaces are pinned to a Git ref. `marketplace upgrade` refreshes the
+existing pin; it does **not** move an older release tag to the new tag.
+
+For an existing installation, replace this marketplace's old pin and reinstall:
 
 ```bash
+codex plugin marketplace remove sissy-code-review-squad --json
 codex plugin marketplace add milad-afkhami/sissy-code-review-squad --ref "v<new-version>" --json
 codex plugin add sissy-code-review-squad@sissy-code-review-squad --json
 ```
 
-If the marketplace already exists, inspect it and use the supported marketplace
-upgrade flow rather than adding a duplicate:
+For a first installation, skip only the `remove` command. Operate on this named
+marketplace only. Confirm `add` reports the intended plugin version.
 
-```bash
-codex plugin marketplace list --json
-codex plugin marketplace upgrade sissy-code-review-squad --json
-codex plugin add sissy-code-review-squad@sissy-code-review-squad --json
-```
-
-### 10. Verify Local State and Restart
+### 10. Verify Local State and Report
 
 ```bash
 codex plugin marketplace list --json
@@ -174,8 +171,15 @@ codex plugin list --json
 
 Confirm the released version is installed and enabled, the cached manifest is
 valid, `$sissy-squad` and `$follow-up-review` exist, and no Codex
-`$clear-mr-comments` skill exists. Restart Claude Code after its update and
-restart Codex after its install so each runtime discovers the release.
+`$clear-mr-comments` skill exists. Inspect the installed manifest and
+`skills/*/SKILL.md` files for these checks; use Claude's `plugin details` inventory
+from Step 8 for its three commands. Standard CLI inventory and installed files
+are sufficient: no model conversation, custom configuration, or custom discovery
+probe is required.
+
+Report the PR/release links, verification results, and local installed versions.
+Tell the user to restart Codex and Claude Code sessions to load the
+update; keep their running sessions intact.
 
 ## Release Notes Template
 
@@ -204,7 +208,7 @@ restart Codex after its install so each runtime discovers the release.
 - [ ] The local Claude plugin update completed.
 - [ ] The Codex marketplace points to the released tag.
 - [ ] The Codex plugin is installed and enabled.
-- [ ] The affected runtime was restarted and exposes the expected commands or skills.
+- [ ] CLI inventories and cached commands/skills are verified; restart guidance was provided.
 
 ## Rollback
 
