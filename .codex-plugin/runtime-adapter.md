@@ -102,6 +102,77 @@ required context. Missing context cannot justify a complete or clean review.
 Keep these evidence files local; preserve canonical GitLab formats. This helper
 does not apply to follow-up-review's intentionally filtered file payloads.
 
+### Initial Review Requirements (sissy-squad only)
+
+The coordinator owns requirements retrieval. After discovery and before launching
+reviewers, resolve referenced Jira issues from the branch and MR description,
+using project guidance or linked issues to resolve the Jira site. Do not guess a
+host from an issue key or hardcode an organization's host.
+
+1. Inspect the current tool inventory and try the available Jira connector first,
+   including site discovery when needed. Retrieve the full issue description,
+   acceptance criteria and all comments, following every comment page. A search
+   snippet, site-discovery response, or partial comment page is not complete.
+2. If the connector is absent/disabled, returns an error (including `Unknown
+   tool`, authentication, or permission errors), or cannot supply complete issue
+   content/comments, load and follow the available `browser-use` skill. Use its
+   authenticated browser to retrieve the issue and all comments from the resolved
+   site. A catalogued connector that fails dispatch is unavailable for this
+   attempt; do not keep probing it or ask the user to enable it before trying the
+   browser. Never change connector settings. If no site can be resolved, or the
+   browser skill/access is unavailable, record the specific remaining gap.
+3. Save the complete raw issue and comment responses, source URL, retrieval time,
+   route and any failed attempts in the snapshot's `run_dir` before paging them.
+   Check comment pagination/counts to establish completeness. Mark partial
+   evidence as partial, preserving it when both routes fail; an empty GitLab
+   issue search does not establish that Jira is unavailable.
+4. Pass the frozen requirements paths and completeness status to every reviewer.
+   Reviewers must read and reuse them instead of fetching the same issue again.
+   If a reviewer discovers another required issue or a gap, it requests retrieval
+   from the coordinator, who uses the same route and shares the frozen result
+   with affected reviewers before they conclude requirements-dependent work.
+
+Do not fail GitLab preflight merely because Jira is disabled. When neither route
+can retrieve required context, disclose what was tried and what remains missing
+to reviewers and in the final review; do not claim full requirements compliance,
+a complete review, or a clean approval from partial evidence. If no issue is
+referenced, record that fact without inventing an issue or Jira site.
+
+### Initial Review Publication Reconciliation (sissy-squad only)
+
+Include this section verbatim in each initial-review agent's prompt. Preserve
+the canonical output bodies and tool choices. Alongside its canonical result,
+each reviewer returns publication evidence from this run: the target project/MR,
+output kind, operation, returned note/thread IDs and the saved successful tool
+response. A local draft, issue count, or promise to post is not publication.
+
+Before Step 9's comprehensive summary, the coordinator reconciles the enabled
+reviewers' required outputs against successful responses. Each enabled reviewer
+must have its canonical domain summary note. When QA is enabled, verify three
+separate outputs even when there are zero findings or requirements are missing:
+
+| Required QA output | Successful publication evidence |
+| --- | --- |
+| `QA Analysis` | `create_merge_request_note` response with a note ID |
+| `Test Checklist` | `create_merge_request_thread` response with a thread ID and its note ID(s), with no `position` |
+| `QA Review Summary` | `create_merge_request_note` response with a separate note ID |
+
+Match evidence to the current project/MR, canonical body and output kind; do not
+count a summary, inline issue, or local evidence file as the separate analysis
+note. Retain responses in `run_dir`. Do not require QA outputs when QA is skipped.
+
+If an output or its proof is missing, send a scoped follow-up to the same reviewer
+to recover the successful response or publish only the missing output using its
+existing review evidence. For a timeout or ambiguous write, read back the MR's
+notes/discussions with available GitLab read operations before retrying, and
+reuse the matching publication rather than creating a duplicate. If read-back
+cannot establish whether it posted, report an execution failure instead of
+blindly retrying. Wait for recovery and reconcile again before aggregation;
+do not rerun discovery or the full review, change findings to satisfy the gate,
+or add empty issue threads. If required publication cannot be completed, report
+the incomplete output as a host execution failure and perform canonical cleanup;
+do not present the review stage as successfully completed.
+
 ## Tool Output (Codex)
 
 Pass this section verbatim to every workflow subagent. `functions.exec` has an

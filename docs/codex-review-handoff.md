@@ -1,11 +1,10 @@
 # Codex review reliability — current handoff
 
-Updated: 2026-10-24. **Next patch agreed; implementation has not started.**
+Updated: 2026-10-24. **v2.5.5 implementation and verification complete.**
 
-## Resume point
+## Current patch
 
-Implement two narrow execution fixes. Prefer Codex-host changes that enforce
-existing contracts rather than new shared review machinery:
+The Codex runtime adapter now enforces two existing execution contracts:
 
 1. Try the available Jira connector first. If disabled, unavailable, or failing,
    fall back to `browser-use`. Retrieve the full issue and comments, freeze the
@@ -23,10 +22,32 @@ Use the invalid security finding from the audited run as a regression case for
 the existing evidence-validation policy. Do not add a generic review phase,
 finding quota, broad shared coverage schema, or model upgrade.
 
-The user requested wrapup before implementation. No next-fix source changes,
-tests, PR, version bump, or release have been made.
+Both changes apply only to initial reviews. The adapter reconciles domain
+summary notes for enabled reviewers and the three separate QA outputs, requesting
+only missing publication work. Ambiguous writes require read-back before retrying.
+Canonical commands, reviewers, standards, model policy and snapshot code are
+unchanged. Four version manifests and installation pins are updated to 2.5.5.
 
-## Released baseline
+Validation: all 32 repository tests and classifier checks pass. A read-only live
+check reproduced Jira's Unknown tool dispatch error, then retrieved the complete
+issue and both comments through browser-use with HTTP 200; the scratch tab was
+closed. Independent evaluation checked ten synthetic checkpoints: connector
+success/pagination, dispatch failure, disabled connector, partial context with
+no browser, missing QA Analysis, ambiguous checklist writes, complete QA output,
+covered-prefix security rejection, a checklist posted as a plain note, and QA
+skipped. An unchanged-adapter comparison also recovered several cases by judgment;
+the patch makes the fallback and reconciliation obligations explicit. These are
+simulated instruction checks, not a live end-to-end review benchmark. Independent
+patch review found no reportable defects. Python/JSON validation, npm boundaries,
+skill validation and materialized Claude inventory checks passed.
+No existing MR comments were changed. Private evidence remains local.
+
+The user explicitly authorized implementation, PR, merge, release and both local
+plugin updates via RELEASE.md with autohelm. Only Codex reload is left to the
+user. Use the v2.5.5 tag and GitHub release as the authoritative publication
+record; this is a completed implementation checkpoint, not a pending patch plan.
+
+## v2.5.4 released baseline
 
 - Runtime release: **v2.5.4**; all four version manifests match.
 - [PR #6](https://github.com/milad-afkhami/sissy-code-review-squad/pull/6):
