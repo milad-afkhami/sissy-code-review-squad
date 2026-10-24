@@ -11,6 +11,11 @@ approval. Inspect the complete diff and run the required checks before committin
 
 The full release process is documented in [RELEASE.md](RELEASE.md).
 
+## Current Review Reliability Work
+
+Read [the Codex review handoff](docs/codex-review-handoff.md) for the released
+baseline, validated findings, and the next agreed patch before implementation.
+
 ## Agent File Reference Syntax
 
 Two distinct patterns are used in command and agent files — **do not confuse them**:
