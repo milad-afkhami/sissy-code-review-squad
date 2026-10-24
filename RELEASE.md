@@ -3,13 +3,17 @@
 This is the release process for Sissy Code Review Squad across Claude Code and
 Codex CLI.
 
+When the user invokes `RELEASE.md` to perform a release, that request authorizes
+the commits, PR creation and merge, tagging, publication, and local plugin updates
+in this workflow. Review the diff and verification results, then continue through
+completion without asking for separate approval at each step.
+
 ## Prerequisites
 
 - You have write access to the GitHub repository.
 - Git and GitHub CLI authentication are configured.
 - The intended release changes are complete and locally verified.
-- No commit has been created before the repository-required complete-diff
-  approval gate.
+- The user has requested the release.
 
 ## Version Files
 
@@ -51,8 +55,8 @@ PY
 
 ```bash
 python3 scripts/test_classify_discussions.py
-python3 -m unittest scripts.test_codex_compatibility -v
-python3 -m py_compile scripts/classify_discussions.py scripts/test_classify_discussions.py scripts/test_codex_compatibility.py
+python3 -m unittest discover -s scripts -p 'test_*.py' -v
+python3 -m py_compile scripts/classify_discussions.py scripts/test_classify_discussions.py scripts/test_codex_compatibility.py scripts/test_codex_snapshot.py .codex-plugin/snapshot.py
 python3 -m json.tool package.json >/dev/null
 python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
@@ -83,22 +87,21 @@ file list contains the canonical Claude command, agent, and rule files while
 excluding `.codex-plugin/` and `skills/`; Codex is distributed from the Git
 marketplace rather than the Claude-oriented npm artifact.
 
-### 3. Show the Complete Diff and Get Approval
+### 3. Review the Complete Diff
 
-Show `git status --short`, the complete tracked and untracked release diff, and
-the verification results. Wait for explicit approval before staging or
-committing. If anything changes after approval, show the new complete diff and
-obtain approval again.
+Inspect `git status --short`, the complete tracked and untracked release diff,
+and the verification results. Include only intended release changes, then
+continue to staging and committing under the user's release authorization.
 
-### 4. Commit the Approved Release
+### 4. Commit the Release
 
-Stage only the approved files and inspect the staged diff:
+Stage only the intended release files and inspect the staged diff:
 
 ```bash
-git add <approved-release-files>
+git add <release-files>
 git diff --cached --check
 git diff --cached
-git commit -m "<approved-release-commit-message>"
+git commit -m "<release-commit-message>"
 ```
 
 ### 5. Create and Verify the Annotated Tag
@@ -195,7 +198,7 @@ restart Codex after its install so each runtime discovers the release.
 
 - [ ] All four version files match.
 - [ ] Automated tests, JSON validation, package dry run, and diff check pass.
-- [ ] The complete diff was explicitly approved before commit.
+- [ ] The complete diff and verification results were reviewed before commit.
 - [ ] The annotated tag exists locally and on GitHub.
 - [ ] The GitHub release is published with the intended notes.
 - [ ] The local Claude plugin update completed.

@@ -345,6 +345,37 @@ Use the same issue tracker with the `enhancement` label.
 
 ---
 
+### Codex reports incomplete review input
+
+Initial reviews now freeze the MR input after creating the worktree. The Codex
+snapshot helper checks the clean worktree HEAD and canonical authored-path list
+against the MR's pinned target/base/head commits, then rebuilds complete diffs
+from git. Changes introduced only by merge commits retain the canonical filter.
+A stale branch
+or an incomplete fetcher payload stops the review before discovery and posting.
+Recover the complete MR payload or refresh the MR refs and worktree; do not
+remove missing paths to make validation pass. Normal worktree cleanup still runs.
+Follow-up reviews retain their intentionally filtered input workflow.
+
+The helper prints a local `run_dir` containing the original `source.json`, the
+complete `context.json`, and a checksum manifest. The coordinator also retains
+the rendered prompts and resolved models there; reviewers retain full
+requirements responses before paging. These artifacts help distinguish missing
+input from differences in review interpretation. They remain local to the run.
+
+### Codex posts fewer findings than another review
+
+Compare the same commit, enabled agents, requirements, and plugin revision.
+Count unique concerns separately from repeated locations, questions, and QA
+checklist threads. The Codex adapter preserves the full canonical checklist and
+the suggestion/nit/question categories, while challenging unsupported claims.
+Zero findings is allowed after completing the applicable checks.
+
+Input-validation tests establish transport reliability, not model recall. For a
+behavior change, repeat paired reviews with frozen inputs and GitLab writes
+disabled; assess supported concerns and false alarms before claiming an
+improvement. Keep model changes separate from prompt changes.
+
 ## FAQ
 
 **Q: Can I run a single agent instead of all of them?**

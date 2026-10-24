@@ -55,9 +55,52 @@ Use `spawn_agent` and `wait_agent` to translate Claude Task and TaskOutput mecha
 Submit every task in a logical parallel stage without introducing dependencies between its tasks. If the runtime enforces a smaller concurrency capacity, keep the remaining tasks queued in that same logical stage and start them as slots become available. Wait for the complete stage before aggregation or verdict processing.
 
 Preserve canonical inputs, response shapes, and review policy throughout each
-agent's run, including coordinator follow-up messages. Request evidence or
-missing required work without narrowing the agent's scope, raising its reporting
-threshold, or introducing an earlier stopping point than its canonical instructions.
+agent's run, including coordinator follow-up messages. Carry this review contract
+verbatim into each initial-review agent's prompt:
+
+- Apply every applicable canonical checklist category to the changed code and
+  its relevant callers, consumers, and state transitions. Before summarizing,
+  finish unexplored checklist areas and keep brief local dispositions for
+  considered concerns, including why a concern was dismissed or remains open.
+- Preserve blocking issues, suggestions, nits, and questions. An uncertain
+  requirement can be a question; an optional improvement can be a suggestion or
+  nit. Do not replace this taxonomy with a generic bugs-only review policy.
+- Challenge each finding's reachability, requirement, framework assumptions,
+  and change from the baseline before posting. Separate distinct locations from
+  distinct causes; do not inflate severity or create findings to meet a quota.
+- Check agreed scope and explicitly accepted or deferred tradeoffs before
+  reporting a concern. Keep them closed unless new evidence changes the decision;
+  completing the checklist does not authorize reopening accepted risks.
+- Request evidence or missing required work without narrowing scope, raising
+  the canonical reporting threshold, or introducing an earlier stopping point.
+  Zero findings is valid after completing the applicable review.
+
+### Initial Review Snapshot (sissy-squad only)
+
+Preserve the complete fetcher JSON in a run-specific scratch file; do not rebuild
+it from displayed or summarized tool output. After canonical worktree creation
+and before discovery, run the host helper:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/.codex-plugin/snapshot.py" \
+  --repo "{worktree_path}" --input "{saved_fetcher_json_path}"
+```
+
+Use its `snapshot_path` as the shared MR context for discovery and all reviewers.
+It checks the clean worktree HEAD and complete canonical authored-path inventory
+against pinned MR refs, rebuilds full diffs from git, and retains original JSON and
+checksums in a unique `run_dir`. On failure, stop before discovery/review posts,
+report the missing or stale input, and perform canonical worktree cleanup.
+Recover missing input without shrinking the reviewed scope.
+
+In that run directory, retain the plugin revision, enabled agents, resolved
+models/efforts, and exact rendered spawn/follow-up messages before dispatch.
+Reviewers must retain complete requirements responses there before paging;
+share the first complete response for each issue across reviewers, reuse those
+frozen responses within the run, and disclose any unavailable
+required context. Missing context cannot justify a complete or clean review.
+Keep these evidence files local; preserve canonical GitLab formats. This helper
+does not apply to follow-up-review's intentionally filtered file payloads.
 
 ## Tool Output (Codex)
 

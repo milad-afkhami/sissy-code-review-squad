@@ -1,15 +1,11 @@
 # Claude Code — Project Guidelines
 
-## Commit Rules
+## Commit and Release Authorization
 
-**Never commit without showing the full diff and getting explicit approval first.**
-
-Before any commit:
-1. Run `git diff` (or `git diff --staged`) and show the output to the user
-2. Wait for explicit approval ("yes", "go ahead", "approved", etc.)
-3. Only then commit
-
-This applies to version bumps, bug fixes, and any other change — no exceptions.
+Follow the user's authorization for commits and releases. When the user invokes
+`RELEASE.md` to perform a release, complete its commits, PR creation and merge,
+tagging, publication, and local plugin updates without requesting repeated
+approval. Inspect the complete diff and run the required checks before committing.
 
 ## Release Process
 
