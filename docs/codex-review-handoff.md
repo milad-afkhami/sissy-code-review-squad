@@ -1,8 +1,44 @@
 # Codex review reliability — current handoff
 
-Updated: 2026-10-24. **v2.5.5 implementation and verification complete.**
+Updated: 2026-10-25. **v2.5.6 implementation and release verification complete.**
 
-## Current patch
+## v2.5.6 follow-up reliability
+
+The user authorized implementing the follow-up investigation's corrections and
+completing RELEASE.md through main, publication and both local plugin updates.
+The next live MR test belongs to the user; do not run a new review or change old
+MR comments as part of release validation.
+
+- Codex now uses complete saved classifier artifacts, mechanically generated
+  evaluator buckets and a verdict validation gate. It avoids model-transcribed
+  thread JSON and rejects altered inputs or missing/duplicate/foreign verdicts.
+- The shared classifier recognizes fresh developer/collaborator action after
+  the original reviewer's latest response. Reviewer clarification and Squad/bot
+  replies do not stand in for developer action; full thread context is retained.
+  The MR author's username permits genuine replies when Sissy shares that account.
+- The shared evaluator accepts QA checklist reports on trust, preserving stated
+  limits. Ordinary defect verification and disagreement rules remain intact.
+
+The shared changes are intentional, user-authorized departures from the old
+protected prompt hashes; other canonical reviewers and the initial-review
+snapshot are unchanged. There is no model-policy change or broader coverage
+framework. Four version manifests and installation pins are set to 2.5.6.
+
+Regression tests were observed failing before implementation. The recovered
+!2872 artifact replay now preserves all seven original note payloads, including
+the complete 3,108-character checklist. This verifies the data boundary, not a
+live model's review quality. Private replay evidence stays outside Git.
+
+All 43 repository tests pass, plus classifier standalone checks, Python/JSON
+validation, npm boundaries and installed-format Claude inventory checks. Five
+independent offline evaluator cases preserve checklist trust while leaving real
+defects and explicit keep-open requests under ordinary verdict rules. Independent
+review found and verified the correction for the same-account MR-author edge;
+no unresolved findings remain. Use the v2.5.6 tag/release for publication state.
+
+## v2.5.5 released baseline
+
+### Initial-review correction
 
 The Codex runtime adapter now enforces two existing execution contracts:
 

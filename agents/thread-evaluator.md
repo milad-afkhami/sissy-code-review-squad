@@ -43,6 +43,24 @@ Each thread is tagged **Kind: `addressed`** or **Kind: `disagreement`** in the p
 
 ### Verdict Rules
 
+### QA Checklist Attestation
+
+For QA's generated `## Test Checklist` thread, accept the developer's testing
+report on trust. Do not independently execute its cases, demand screenshots or
+logs as proof, or require every checkbox to be ticked. For an addressed checklist,
+return `resolved` with an explanation that the developer's report was accepted
+on trust; preserve disclosed unperformed or deployment-dependent checks as
+limitations rather than claiming you ran them. A disagreement solely declining
+additional checklist proof or independent retesting is `conceded` on that basis.
+
+This exception does not apply to substantive defect threads, including defects
+about missing automated tests, or to a disagreement about actual feature
+behavior. If the developer explicitly asks to keep the checklist open or reports
+a known unresolved defect rather than providing a testing report, retain normal
+verdict rules. Threads with no fresh developer reply are still skipped upstream.
+
+### Source Defect Verdicts
+
 Return **"resolved"** when:
 
 - The concern is no longer present in the current code

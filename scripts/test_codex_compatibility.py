@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PROTECTED_SHA256 = {
     "agents/accessibility.md": "15789520880f5a45feaabe3a7eaf8644396154894c16332577042848c22ea239",
-    "agents/classify-mr-discussions.md": "9c2beeb062e4866783bbdd5d14429f6e86d90bc4ae14b2a5d62702a4b1968f1a",
+    "agents/classify-mr-discussions.md": "34f23d12517d6f7f435b5383134cacf7d72d7adfc81cbff5bc844f23493c1f83",
     "agents/code-quality.md": "9b44fd9b30af018c5e0f475dca5cf477a9e3e0926350e25bbc5e57ae6d566329",
     "agents/discovery.md": "ce63359040ec65eed5eb4ac671854b8e0686360a7aae120b3845198745293356",
     "agents/fetch-mr-diffs.md": "fa8095a799bbe1b9f5a4dec1d978936f83f2ea55d9be5fbc59fa110940d2922a",
@@ -29,10 +29,10 @@ PROTECTED_SHA256 = {
     "agents/security.md": "1cfd5c692b5894138908bdc5dca723135964dfca60d03af92ec7d3dcd652404f",
     "agents/seo.md": "cb626806e78fd25a3818e8a16473bf31a112a23593f3b519a82808c34d0ace83",
     "agents/styling.md": "c981357b5c6bfdc9d871eca555d2a7b4681ba3bb87a44774260e54a7b8113169",
-    "agents/thread-evaluator.md": "54832fd565a889666f78b5ee706eb932fd53ca91daa68641465b9848b57a3b95",
+    "agents/thread-evaluator.md": "b666740a0482a5f52c4522a070520532c51bbb3f591d14cc5e33b40daf373036",
     "agents/typescript.md": "056f4dd3c82172693325504133fd0c900ee905e2759ef70ac6820a2ceea5a18e",
     "commands/clear-mr-comments.md": "b7b9904bcbe6a79bcc64d3602b24efafb38a41b0f7abfa94475003338f093838",
-    "commands/follow-up-review.md": "2c644d5a313e2095c8da0567b90f091a2ce28d573bbae9f6dcba816beb253a00",
+    "commands/follow-up-review.md": "4a1a97b3d81ea8a9044149b5cee16596324502f0517351b6aba27dce2506b533",
     "rules/code-review-standards.md": "141022b7be6457761bed648e2925b5ddaf765205d8801c9e6001e269179635b4",
 }
 

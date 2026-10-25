@@ -173,6 +173,55 @@ or add empty issue threads. If required publication cannot be completed, report
 the incomplete output as a host execution failure and perform canonical cleanup;
 do not present the review stage as successfully completed.
 
+## Follow-Up Thread Artifacts (follow-up-review only)
+
+Before dispatching the classifier, create a unique private classifier run
+directory and pass its absolute path as the optional `run_dir` input, alongside
+`plugin_root`. The classifier's canonical helper saves `filtered.json`, its
+decisions in `classification.json`, and the complete assembled `result.json`
+there. Consume that saved result for Step 2, not a model-retyped or shortened
+final message. If it is missing, recover by rerunning the canonical helper's
+`assemble` with the saved filtered data and decisions; do not reconstruct notes
+from displayed tool output. Report its warnings under the canonical guardrail.
+
+Use the artifact's counts and paths for the canonical skip/fetch decisions.
+Keep follow-up-review's intentionally filtered fetch scope. When evaluators are
+needed, save the complete architecture response to a scratch file, then run:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/.codex-plugin/followup.py" prepare \
+  --classification-dir "{classifier_run_dir}" \
+  --project-root "{worktree_path}" --architecture "{architecture_path}"
+```
+
+The helper reassembles the original helper data, freezes complete notes and
+architecture, and writes one JSON input per canonical file bucket. Use only
+these bucket files for evaluator inputs. Each evaluator must first read its
+canonical agent file completely, then read the supplied bucket JSON fully in
+bounded pages, applying its `project_root`, `file_path`, `threads` and
+`architecture_context` as the canonical inputs. Preserve each thread's `kind`,
+original concern and all note bodies verbatim. Do not summarize them, add a
+coordinator evidence restriction, or replace missing inputs with inference.
+Carry the Tool Output section below verbatim into each task. Retain resolved
+models/efforts and exact spawn/follow-up prompts in the helper's `run_dir`.
+
+Wait for the complete evaluator stage and save the flattened verdict array
+without rewriting explanations or replies. Before any verdict writes, run:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/.codex-plugin/followup.py" check \
+  --manifest "{manifest_path}" --verdicts "{verdicts_json_path}"
+```
+
+This rejects changed thread inputs, missing/duplicate/foreign verdict IDs, and
+verdicts or fields incompatible with the thread kind. Process only its saved
+`verdicts_path` serially under canonical Step 6. On failure recover the specific
+missing or invalid bucket output from the same evaluator; do not narrow thread
+coverage or post partial results as complete. If recovery fails, report a host
+execution error and perform canonical cleanup. Preserve the canonical QA
+checklist attestation exception, ambiguity policy and disagreement resolution
+rules. The initial-review snapshot helper does not replace this boundary.
+
 ## Tool Output (Codex)
 
 Pass this section verbatim to every workflow subagent. `functions.exec` has an

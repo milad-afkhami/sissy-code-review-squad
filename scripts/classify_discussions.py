@@ -10,7 +10,7 @@ cannot be gotten wrong by a model under load.
 Two subcommands:
 
   prep     Read the fetched discussions, filter to unresolved threads, split
-           off `untouched` (exactly one non-system note) deterministically, and
+           off `untouched` (no fresh developer response) deterministically, and
            print a compact worksheet of the has-reply threads for the model to
            judge. Persists the full filtered data to <out-dir>/filtered.json.
 
@@ -20,9 +20,8 @@ Two subcommands:
 
 Design notes
 ------------
-* `untouched` is decided here, never by the model. A thread with a developer
-  reply therefore cannot be misfiled as `untouched` — that was the dominant
-  bug this rewrite eliminates.
+* `untouched` is decided here, never by the model. Reviewer clarification and
+  automated follow-up messages do not stand in for fresh developer action.
 * Note bodies for `addressed` threads are extracted here by id, so the model
   never transcribes text into its output (removes output-size pressure and
   transcription hallucination).
@@ -33,6 +32,7 @@ Design notes
 import argparse
 import json
 import os
+import re
 import sys
 
 
@@ -76,6 +76,25 @@ def _author_name(note):
 
 def _non_system_notes(discussion):
     return [n for n in discussion.get("notes", []) if not n.get("system", False)]
+
+
+def _developer_replies(notes, developer_author=None):
+    """Fresh collaborator replies after the original reviewer's latest response.
+
+    GitLab does not attach a developer role to each note. Use the original
+    reviewer account and explicit Squad/bot metadata, not prose keywords such as
+    'done'. Keep all notes in filtered.json; only this intent worksheet is scoped.
+    """
+    reviewer = _author_name(notes[0])
+    replies = []
+    for note in notes[1:]:
+        squad = re.match(r"\s*>\s*SubAgent:[^\n]*Sissy", note.get("body", ""))
+        if squad or (_author_name(note) == reviewer and reviewer != developer_author):
+            replies = []
+        elif not (isinstance(note.get("author"), dict) and note["author"].get("bot")):
+            if _author_name(note) != "unknown":
+                replies.append(note)
+    return replies
 
 
 def _is_unresolved(discussion):
@@ -122,6 +141,7 @@ def cmd_prep(args):
         ns_notes = _non_system_notes(d)
         new_path, new_line = _position(d)
         discussion_id = d.get("id")
+        replies = _developer_replies(ns_notes, args.developer_author)
 
         record = {
             "discussion_id": discussion_id,
@@ -129,12 +149,12 @@ def cmd_prep(args):
             "new_line": new_line,
             "notes": [{"author": _author_name(n), "body": n.get("body", "")}
                       for n in ns_notes],
-            "has_reply": len(ns_notes) >= 2,
+            "has_reply": bool(replies),
         }
         filtered.append(record)
 
-        if len(ns_notes) < 2:
-            # Only the original review comment exists → untouched, decided here.
+        if not replies:
+            # No fresh developer response → await developer, without re-posting.
             untouched_count += 1
             continue
 
@@ -143,7 +163,7 @@ def cmd_prep(args):
             "new_path": new_path,
             "concern": _truncate(ns_notes[0].get("body", ""), args.concern_chars),
             "replies": [{"author": _author_name(n), "body": n.get("body", "")}
-                        for n in ns_notes[1:]],
+                        for n in replies],
         })
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -243,6 +263,10 @@ def cmd_assemble(args):
             + result["untouched_count"] == total_unresolved), \
         "count reconciliation failed"
 
+    # Hosts can consume this complete artifact instead of a model-transcribed
+    # return value. Keep stdout's existing contract unchanged for other callers.
+    with open(os.path.join(args.dir, "result.json"), "w", encoding="utf-8") as fh:
+        json.dump(result, fh, ensure_ascii=False)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
@@ -256,6 +280,7 @@ def main(argv=None):
     p_prep.add_argument("--out-dir", required=True, help="dir to persist filtered.json")
     p_prep.add_argument("--concern-chars", type=int, default=800,
                         help="truncate the concern text in the worksheet to N chars")
+    p_prep.add_argument("--developer-author", help="MR author username, including self-review replies")
     p_prep.set_defaults(func=cmd_prep)
 
     p_asm = sub.add_parser("assemble", help="build final contract JSON")
