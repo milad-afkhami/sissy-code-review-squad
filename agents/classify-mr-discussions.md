@@ -13,8 +13,13 @@ they *disagree* with it?
 Everything else — the unresolved filter, deciding which threads are `untouched`,
 and extracting note bodies — is handled deterministically by the helper script
 `classify_discussions.py`. **Do not** re-implement that logic yourself, and
-**do not** decide `untouched` yourself: a thread with a developer reply is NEVER
-untouched. Your only creative task is the two-way `addressed` vs `disagreement`
+**do not** decide `untouched` yourself. The helper selects fresh developer or
+collaborator replies after the original reviewer's latest response, ignoring
+bots and Squad replies as developer action. Reviewer clarification alone, or a
+previously processed developer response with no new reply, is `untouched`.
+The MR author's plain replies also count when Sissy posts under that same
+account; explicit Squad-generated messages still do not count as developer action.
+Your only creative task is the two-way `addressed` vs `disagreement`
 call on the worksheet the script gives you.
 
 ## Input
@@ -25,6 +30,8 @@ You will receive:
 - `plugin_root`: absolute path to the plugin root (the helper script is at
   `{plugin_root}/scripts/classify_discussions.py`). If this input is missing or
   empty, fall back to the `${CLAUDE_PLUGIN_ROOT}` environment variable.
+- Optional `run_dir`: absolute private directory supplied by the host. When
+  supplied, use it for every page, decision and helper artifact in this run.
 
 ## Task
 
@@ -33,6 +40,10 @@ You will receive:
 Substitute `{plugin_root}` below with your `plugin_root` input value (a literal
 absolute path). If `plugin_root` was not provided, use `${CLAUDE_PLUGIN_ROOT}`
 instead — the shell will expand the env var if it is set.
+
+If `run_dir` was supplied, replace only the first line below with
+`RUN_DIR="{run_dir}"` and ensure that directory exists. Do not create a second
+run directory. Otherwise use the block unchanged:
 
 ```bash
 RUN_DIR=$(mktemp -d -t sissy-classify-XXXXXX)
@@ -46,6 +57,12 @@ If you see `SCRIPT_NOT_FOUND`, stop and report it — the helper path is wrong.
 Remember `RUN_DIR` and `SCRIPT` — you will use them in Steps 3, 4, and 5.
 
 ### Step 2: Fetch All Discussions (collect them as files)
+
+First call `mcp__gitlab-mcp__get_merge_request` for this project/MR and retain
+`author.username` as `{mr_author_username}`. Pass it to `prep` below so an MR
+author using the same account as Sissy can still acknowledge their own fixes.
+If this identity cannot be retrieved, report the error rather than silently
+assuming same-account replies are only reviewer clarification.
 
 Call `mcp__gitlab-mcp__mr_discussions` with `per_page: 100`. If the result
 contains exactly 100 items, call again with `page: 2`, then `page: 3`, etc.,
@@ -71,7 +88,8 @@ Run the helper's `prep` command with every page file path from Step 2:
 
 ```bash
 python3 "$SCRIPT" prep \
-  <page_file_1> [<page_file_2> ...] --out-dir "$RUN_DIR"
+  <page_file_1> [<page_file_2> ...] --out-dir "$RUN_DIR" \
+  --developer-author "{mr_author_username}"
 ```
 
 It prints a JSON object:
@@ -90,7 +108,7 @@ It prints a JSON object:
 ```
 
 The script has already filtered to unresolved threads and set aside the
-`untouched` ones (threads with no developer reply). You classify only the
+`untouched` ones (threads with no fresh developer reply). You classify only the
 `worksheet` entries.
 
 ### Step 4: Classify Each Worksheet Thread (your judgment)
@@ -134,7 +152,7 @@ change:
 
 - **Do not pattern-match keywords.** Judge the net conclusion: "I changed the
   code" → `addressed`; "I am not changing the code" → `disagreement`.
-- **Last reply wins:** if the developer first disagreed and later replied "done",
+- **Last developer reply wins:** if the developer first disagreed and later replied "done",
   classify `addressed`.
 - **When genuinely ambiguous, prefer `addressed`** — a wrong `addressed` just
   becomes a verification pass downstream, whereas a wrong `disagreement` silently
@@ -163,7 +181,9 @@ python3 "$SCRIPT" assemble \
 
 It prints the final result JSON (it extracts note bodies for `addressed`
 threads, builds the `disagreements` list, computes `untouched_count`, and
-reconciles the counts).
+reconciles the counts). It also saves the identical complete result to
+`$RUN_DIR/result.json`. Keep this artifact intact; hosts may consume it directly
+to avoid model transcription or summarization of long notes.
 
 ## Output Format
 

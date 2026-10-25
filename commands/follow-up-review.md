@@ -31,6 +31,11 @@ After a review, developers should reply to each thread:
 - If they've addressed it: reply with "done"/"fixed"/etc., or simply describe the change they made ("extracted a shared component", "deleted the unused export") — a plain description counts just as well.
 - If they disagree: reply explaining why. A reply that declines or defers the change is treated as a disagreement — Police Sissy will post a position on it (agree / counter / your-call). If it **agrees** the pushback holds, it resolves the thread (reopen it if you disagree); for **counter** / **your-call** it replies and leaves the thread open, so the final call is yours. Tone doesn't change the classification; the conclusion does.
 
+QA's generated Test Checklist is accepted on the developer's testing report,
+based on trust. It does not require independent retesting or checked boxes;
+disclosed verification limits remain in the summary. Actual defect threads
+continue to require the ordinary source-based evaluation.
+
 ## Instructions
 
 ### Step 1: Parse MR Metadata
@@ -402,7 +407,7 @@ Run this even if earlier steps reported issues, so no worktree is left behind. I
 1. **Self-contained**: There is no `sissy-setup`. This command provisions the worktree of the MR's source branch itself, evaluates, and cleans up in one run.
 2. **Isolation**: Evaluators read the detached worktree, never the reviewer's working tree. Because the worktree is built from the MR's own `source_branch`, it can never evaluate fixes against the wrong branch.
 3. **Discussion Classifier**: Owns the entire fetch + paginate + filter + classify pipeline. Returns compact JSON — discussions never touch main context. `untouched` (threads with no developer reply) is decided mechanically by a helper script, so a replied-to thread can never be misfiled as untouched; the model only judges `addressed` vs `disagreement` on threads that have a reply. Note bodies for `addressed` threads are extracted deterministically, not transcribed by the model.
-4. **Last reply wins**: A thread is classified by the intent of its last non-system reply. A long or polite reply that declines the change is a `disagreement`, not `addressed` — the conclusion is judged, not the tone.
+4. **Last developer reply wins**: A thread is classified by its fresh developer/collaborator response after the original reviewer's latest feedback. Reviewer clarification and automated replies do not count as developer action. A long or polite reply that declines the change is a `disagreement`, not `addressed` — the conclusion is judged, not the tone.
 5. **Discovery Agent**: Only spawned if there are addressed **or disagreed** threads (uses Sonnet). Explores the worktree via its `Project Root` input.
 6. **Parallel Evaluation**: All thread evaluator agents MUST be spawned in a single message (use Opus).
 7. **Serial Processing**: Verdicts are processed serially to avoid race conditions on GitLab state.

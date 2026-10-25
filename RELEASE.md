@@ -56,7 +56,7 @@ PY
 ```bash
 python3 scripts/test_classify_discussions.py
 python3 -m unittest discover -s scripts -p 'test_*.py' -v
-python3 -m py_compile scripts/classify_discussions.py scripts/test_classify_discussions.py scripts/test_codex_compatibility.py scripts/test_codex_snapshot.py .codex-plugin/snapshot.py
+python3 -m py_compile scripts/classify_discussions.py scripts/test_classify_discussions.py scripts/test_codex_compatibility.py scripts/test_codex_snapshot.py scripts/test_codex_followup.py .codex-plugin/snapshot.py .codex-plugin/followup.py
 python3 -m json.tool package.json >/dev/null
 python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
