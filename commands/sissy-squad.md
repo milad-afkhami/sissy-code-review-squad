@@ -49,7 +49,7 @@ Read and execute the parser agent instructions from `@agents/parse-mr-metadata.m
 
 ### Step 3: Configure Agents (Interactive)
 
-Pick which of the 10 agents run and save the choice to `.sissy/review-config.yml`
+Pick which of the 11 agents run and save the choice to `.sissy/review-config.yml`
 in your **main repo** (not the worktree — this is your project preference, not
 branch code). Do this now, up front, so the rest of the review runs unattended.
 
@@ -68,9 +68,9 @@ fi
 ```
 
 Read `.sissy/review-config.yml` from the current directory. Build a map of
-`agentKey → enabled` for all 10 keys
+`agentKey → enabled` for all 11 keys
 (`accessibility`, `security`, `performance`, `seo`, `styling`, `code-quality`,
-`react`, `typescript`, `git`, `qa`). Any absent key — or a missing file — defaults
+`react`, `typescript`, `git`, `qa`, `test-confidence`). Any absent key — or a missing file — defaults
 to `true`.
 
 **3b. Check zenity.** Run `zenity --version`. If it fails — or `$DISPLAY` and `$WAYLAND_DISPLAY` are both empty (a headless session) — print `⚠️ Agent picker unavailable — using existing agent config.` and skip to Step 4 using the map from 3a. Otherwise a display exists, so show the picker; do not skip it because the session "seems" background.
@@ -94,6 +94,7 @@ Select agents to enable for this review:" \
   {{TYPESCRIPT}}     "typescript"     "📝  Unknown Sissy — Type safety, inference" \
   {{GIT}}            "git"            "📚  Detached-HEAD Sissy — Commits, PR structure" \
   {{QA}}             "qa"             "✅  BugSlayer Sissy — Requirements, bugs, tests" \
+  {{TEST_CONFIDENCE}} "test-confidence" "🧪  HardToPlease Sissy — Test confidence, meaningful scenarios" \
   --separator=",")
 
 if [ $? -ne 0 ]; then
@@ -104,7 +105,7 @@ else
     echo "# Sissy Code Review Squad Configuration"
     echo "# Written by /sissy-squad's agent picker. Edit here or re-run to change."
     echo "agents:"
-    for key in accessibility security performance seo styling code-quality react typescript git qa; do
+    for key in accessibility security performance seo styling code-quality react typescript git qa test-confidence; do
       case ",$SELECTED_AGENTS," in
         *",$key,"*) enabled=true ;;
         *)          enabled=false ;;
@@ -272,6 +273,7 @@ The `@agents/<agent-file>.md` placeholder above is replaced per agent row — us
 | `typescript` | 📝 Unknown Sissy (TypeScript) | `@agents/typescript.md` | Types, safety, inference |
 | `git` | 📚 Detached-HEAD Sissy (Git) | `@agents/git.md` | Commits, PR structure |
 | `qa` | ✅ BugSlayer Sissy (QA) | `@agents/qa.md` | Requirements, bugs, test checklists |
+| `test-confidence` | 🧪 HardToPlease Sissy (Test Confidence) | `@agents/test-confidence.md` | Confidence-bearing tests, invariants, evidence |
 
 **Task Tool Parameters for ALL review agents:**
 - `subagent_type: "general-purpose"`
@@ -321,6 +323,7 @@ Create a summary note on the MR using `mcp__gitlab-mcp__create_merge_request_not
 | 📝 Unknown Sissy (TypeScript) | X | X | X |
 | 📚 Detached-HEAD Sissy (Git) | X | X | X |
 | ✅ BugSlayer Sissy (QA) | X | X | X |
+| 🧪 HardToPlease Sissy (Test Confidence) | X | X | X |
 | **Total** | **X** | **X** | **X** |
 
 **Note:** For skipped agents, show "⏭️ Skipped" instead of counts. Only include enabled agents in totals.
@@ -378,7 +381,7 @@ xychart-beta
 
 ---
 
-*Reviewed by The Squad: Colorblind Sissy (Accessibility), SecuSissy (Security), TurboSissy (Performance), Canonical Sissy (SEO), ChicSissy (Styling), KISS Sissy (Code Quality), Hooked Sissy (React), Unknown Sissy (TypeScript), Detached-HEAD Sissy (Git), BugSlayer Sissy (QA)*
+*Reviewed by The Squad: Colorblind Sissy (Accessibility), SecuSissy (Security), TurboSissy (Performance), Canonical Sissy (SEO), ChicSissy (Styling), KISS Sissy (Code Quality), Hooked Sissy (React), Unknown Sissy (TypeScript), Detached-HEAD Sissy (Git), BugSlayer Sissy (QA), HardToPlease Sissy (Test Confidence)*
 ````
 
 After the summary note is posted, run:

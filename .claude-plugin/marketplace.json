@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sissy-code-review-squad",
-  "version": "2.5.6",
+  "version": "2.6.0",
   "description": "Multi-agent code review plugin for GitLab merge requests",
   "owner": {
     "name": "Milad Afkhami",
@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "sissy-code-review-squad",
-      "description": "10 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, and QA.",
+      "description": "11 specialized AI agents review accessibility, security, performance, SEO, styling, code quality, React, TypeScript, Git hygiene, QA, and test confidence.",
       "source": "./claude-plugin",
       "category": "productivity"
     }

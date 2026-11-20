@@ -48,6 +48,10 @@ agents:
   qa:
     enabled: true
 
+  # HardToPlease Sissy - test confidence, meaningful scenarios, and evidence
+  test-confidence:
+    enabled: true
+
 # ============================================================
 # RECOMMENDED PROJECT FILES (Optional but highly recommended)
 # ============================================================

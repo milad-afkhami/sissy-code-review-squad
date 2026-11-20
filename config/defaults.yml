@@ -22,3 +22,5 @@ agents:
     enabled: true
   qa:
     enabled: true
+  test-confidence:
+    enabled: true

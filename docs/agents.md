@@ -1,6 +1,6 @@
 # Agents Reference
 
-The Sissy Code Review Squad consists of 10 specialized agents, each focused on a specific domain. All agents run in parallel through the Puppet Master orchestrator.
+The Sissy Code Review Squad consists of 11 specialized agents, each focused on a specific domain. All agents run in parallel through the Puppet Master orchestrator.
 
 ## Agent Overview
 
@@ -16,6 +16,7 @@ The Sissy Code Review Squad consists of 10 specialized agents, each focused on a
 | Unknown Sissy | :memo: | TypeScript | `any` usage, type safety |
 | Detached-HEAD Sissy | :books: | Git | Secrets in commits |
 | BugSlayer Sissy | :white_check_mark: | QA | Missing requirements |
+| HardToPlease Sissy | :test_tube: | Test confidence | False confidence, missing scenarios |
 
 ---
 
@@ -342,6 +343,26 @@ BugSlayer Sissy provides two outputs:
 2. **Test Checklist** - GitLab-compatible checkbox list for manual testing
 
 ---
+
+## :test_tube: HardToPlease Sissy (Test Confidence)
+
+**Focus:** Whether tests catch consequential defects and provide evidence of completion
+
+**Dependency:** Loads the shared `testing-philosophy` skill at runtime. The agent does not duplicate that skill's content.
+
+**Character:** HardToPlease Sissy — “You’re not done until I’m pleased.” Approved avatar: [`assets/avatars/hard-to-please-sissy.png`](../assets/avatars/hard-to-please-sissy.png).
+
+**Blocking Issues (:exclamation:)**
+- Consequential invariant or boundary has no test
+- Tests cannot fail for a plausible defect or assert the implementation itself
+- Security, isolation, data-integrity, or fail-direction behavior is untested
+
+**Suggestions (:bulb:)**
+- Missing meaningful scenario, deterministic seam, or real-run evidence
+- Over-mocking, flaky tests, or coverage theatre
+
+**Nits (:nail_care:)**
+- Small assertion or test-organization improvements
 
 ## How Agents Coordinate
 

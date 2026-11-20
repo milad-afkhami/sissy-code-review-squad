@@ -1,6 +1,6 @@
 # Sissy Code Review Squad
 
-A multi-agent code review plugin for Claude Code and Codex CLI that reviews GitLab merge requests across 10 specialized domains.
+A multi-agent code review plugin for Claude Code and Codex CLI that reviews GitLab merge requests across 11 specialized domains.
 
 ## The Squad
 
@@ -16,6 +16,7 @@ A multi-agent code review plugin for Claude Code and Codex CLI that reviews GitL
 | 📝 **Unknown Sissy** | TypeScript | `any` types, unsafe assertions |
 | 📚 **Detached-HEAD Sissy** | Git | Secrets in commits |
 | ✅ **BugSlayer Sissy** | QA | Missing requirements, critical bugs |
+| 🧪 **HardToPlease Sissy** | Test confidence | False confidence, missing scenarios, weak assertions |
 
 ## Installation
 
@@ -94,6 +95,8 @@ agents:
   git:
     enabled: true
   qa:
+    enabled: true
+  test-confidence:
     enabled: true
 ```
 
